@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, ToastContainer } from '../components/common';
 import { useAuth } from '../context/AuthContext';
+import AuthForm from '../components/auth/AuthForm';
 
 /**
  * PUBLIC_INTERFACE
@@ -98,94 +99,71 @@ export default function Login() {
     }
   };
 
-  const styles = {
-    card: {
-      background: 'var(--surface)',
-      border: '1px solid var(--border-color)',
-      borderRadius: 'var(--radius-lg)',
-      padding: 20,
-      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-      maxWidth: 420,
-      margin: '0 auto',
-      width: '100%',
-    },
-    header: {
-      marginBottom: 16,
-      textAlign: 'center',
-    },
-    actions: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-      marginTop: 10,
-    },
-    divider: {
-      textAlign: 'center',
-      color: 'var(--muted)',
-      fontSize: 12,
-      margin: '8px 0',
-    },
-    footer: {
-      textAlign: 'center',
-      marginTop: 12,
-      fontSize: 14,
-    },
-    formGrid: {
-      display: 'grid',
-      gap: 10,
-    },
-    title: { margin: 0 },
-    subtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 14 },
-  };
-
   return (
     <section aria-labelledby="login-title" style={{ width: '100%' }}>
       <ToastContainer ref={toastRef} />
-      <div style={styles.card}>
-        <header style={styles.header}>
-          <h1 id="login-title" style={styles.title}>Sign in</h1>
-          <p style={styles.subtitle}>Access your meeting manager</p>
-        </header>
-
-        <form onSubmit={onSubmit} style={styles.formGrid} noValidate>
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={handleChange}
-            error={errors.email}
-            autoComplete="email"
-            required
-          />
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="Your password"
-            value={form.password}
-            onChange={handleChange}
-            error={errors.password}
-            autoComplete="current-password"
-            required
-          />
-          <div style={styles.actions}>
-            <Button type="submit" disabled={submitting || loading}>
+      <AuthForm
+        title="Sign in"
+        subtitle="Access your meeting manager"
+        onSubmit={onSubmit}
+        actions={
+          <>
+            <Button type="submit" size="lg" disabled={submitting || loading} aria-label="Sign in to your account">
               {submitting ? 'Signing in...' : 'Sign in'}
             </Button>
-            <div style={styles.divider}>or</div>
-            <Button type="button" variant="secondary" onClick={onGoogle} disabled={loading}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={onGoogle}
+              disabled={loading}
+              aria-label="Continue with Google"
+            >
               Continue with Google
             </Button>
-          </div>
-        </form>
-
-        <div style={styles.footer}>
-          Don&apos;t have an account?{' '}
-          <Link className="link" to="/signup">Create one</Link>
-        </div>
-      </div>
+          </>
+        }
+        footer={
+          <>
+            Don&apos;t have an account?{' '}
+            <Link className="link" to="/signup">Create one</Link>
+          </>
+        }
+      >
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={handleChange}
+          error={errors.email}
+          autoComplete="email"
+          required
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'login-email-error' : undefined}
+        />
+        <Input
+          label="Password"
+          name="password"
+          type="password"
+          placeholder="Your password"
+          value={form.password}
+          onChange={handleChange}
+          error={errors.password}
+          autoComplete="current-password"
+          required
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
+        />
+        {/* Hidden live region for improved screen reader announcement of errors */}
+        <span id="login-email-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
+          {errors.email || ''}
+        </span>
+        <span id="login-password-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
+          {errors.password || ''}
+        </span>
+      </AuthForm>
     </section>
   );
 }

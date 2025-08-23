@@ -35,9 +35,9 @@ export default function Button({
   };
 
   const sizeStyles = {
-    sm: { padding: '6px 10px', fontSize: 12 },
-    md: { padding: '10px 14px', fontSize: 14 },
-    lg: { padding: '12px 18px', fontSize: 16 },
+    sm: { padding: '8px 12px', fontSize: 13 },
+    md: { padding: '12px 16px', fontSize: 15 },
+    lg: { padding: '14px 20px', fontSize: 16 },
   };
 
   const variantStyles = {
@@ -65,6 +65,16 @@ export default function Button({
       }
     : {};
 
+  const focusVisible = (el) => {
+    el.style.boxShadow = '0 0 0 3px var(--focus-ring)';
+  };
+
+  const resetHover = (el) => {
+    el.style.transform = 'translateY(0)';
+    el.style.filter = 'none';
+    el.style.boxShadow = 'none';
+  };
+
   const style = {
     ...base,
     ...sizeStyles[size],
@@ -83,9 +93,10 @@ export default function Button({
       }}
       onMouseLeave={(e) => {
         if (disabled) return;
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.filter = 'none';
+        resetHover(e.currentTarget);
       }}
+      onFocus={(e) => focusVisible(e.currentTarget)}
+      onBlur={(e) => resetHover(e.currentTarget)}
       {...rest}
     >
       {children}

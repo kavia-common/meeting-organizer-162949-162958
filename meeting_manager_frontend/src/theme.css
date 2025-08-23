@@ -38,6 +38,7 @@
 
 /* Base light theme application */
 html, body, #root {
+  min-height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -59,4 +60,11 @@ html, body, #root {
 }
 .link:hover {
   text-decoration: underline;
+}
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  body {
+    padding: 0 var(--space-3);
+  }
 }

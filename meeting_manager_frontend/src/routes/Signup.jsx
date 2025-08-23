@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, ToastContainer } from '../components/common';
 import { useAuth } from '../context/AuthContext';
+import AuthForm from '../components/auth/AuthForm';
 
 /**
  * PUBLIC_INTERFACE
@@ -105,105 +106,87 @@ export default function Signup() {
     }
   };
 
-  const styles = {
-    card: {
-      background: 'var(--surface)',
-      border: '1px solid var(--border-color)',
-      borderRadius: 'var(--radius-lg)',
-      padding: 20,
-      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-      maxWidth: 420,
-      margin: '0 auto',
-      width: '100%',
-    },
-    header: {
-      marginBottom: 16,
-      textAlign: 'center',
-    },
-    actions: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-      marginTop: 10,
-    },
-    divider: {
-      textAlign: 'center',
-      color: 'var(--muted)',
-      fontSize: 12,
-      margin: '8px 0',
-    },
-    footer: {
-      textAlign: 'center',
-      marginTop: 12,
-      fontSize: 14,
-    },
-    formGrid: {
-      display: 'grid',
-      gap: 10,
-    },
-    title: { margin: 0 },
-    subtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 14 },
-  };
-
   return (
     <section aria-labelledby="signup-title" style={{ width: '100%' }}>
       <ToastContainer ref={toastRef} />
-      <div style={styles.card}>
-        <header style={styles.header}>
-          <h1 id="signup-title" style={styles.title}>Create account</h1>
-          <p style={styles.subtitle}>Start managing your meetings</p>
-        </header>
-
-        <form onSubmit={onSubmit} style={styles.formGrid} noValidate>
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={handleChange}
-            error={errors.email}
-            autoComplete="email"
-            required
-          />
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="Create a password"
-            value={form.password}
-            onChange={handleChange}
-            error={errors.password}
-            autoComplete="new-password"
-            required
-          />
-          <Input
-            label="Confirm password"
-            name="confirm"
-            type="password"
-            placeholder="Repeat your password"
-            value={form.confirm}
-            onChange={handleChange}
-            error={errors.confirm}
-            autoComplete="new-password"
-            required
-          />
-          <div style={styles.actions}>
-            <Button type="submit" disabled={submitting || loading}>
+      <AuthForm
+        title="Create account"
+        subtitle="Start managing your meetings"
+        onSubmit={onSubmit}
+        actions={
+          <>
+            <Button type="submit" size="lg" disabled={submitting || loading} aria-label="Create your account">
               {submitting ? 'Creating account...' : 'Sign up'}
             </Button>
-            <div style={styles.divider}>or</div>
-            <Button type="button" variant="secondary" onClick={onGoogle} disabled={loading}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={onGoogle}
+              disabled={loading}
+              aria-label="Continue with Google"
+            >
               Continue with Google
             </Button>
-          </div>
-        </form>
-
-        <div style={styles.footer}>
-          Already have an account?{' '}
-          <Link className="link" to="/login">Sign in</Link>
-        </div>
-      </div>
+          </>
+        }
+        footer={
+          <>
+            Already have an account?{' '}
+            <Link className="link" to="/login">Sign in</Link>
+          </>
+        }
+      >
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={handleChange}
+          error={errors.email}
+          autoComplete="email"
+          required
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'signup-email-error' : undefined}
+        />
+        <Input
+          label="Password"
+          name="password"
+          type="password"
+          placeholder="Create a password"
+          value={form.password}
+          onChange={handleChange}
+          error={errors.password}
+          autoComplete="new-password"
+          required
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'signup-password-error' : undefined}
+        />
+        <Input
+          label="Confirm password"
+          name="confirm"
+          type="password"
+          placeholder="Repeat your password"
+          value={form.confirm}
+          onChange={handleChange}
+          error={errors.confirm}
+          autoComplete="new-password"
+          required
+          aria-invalid={Boolean(errors.confirm)}
+          aria-describedby={errors.confirm ? 'signup-confirm-error' : undefined}
+        />
+        {/* Hidden live region for improved screen reader announcement of errors */}
+        <span id="signup-email-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
+          {errors.email || ''}
+        </span>
+        <span id="signup-password-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
+          {errors.password || ''}
+        </span>
+        <span id="signup-confirm-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
+          {errors.confirm || ''}
+        </span>
+      </AuthForm>
     </section>
   );
 }

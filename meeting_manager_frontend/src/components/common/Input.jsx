@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 /**
  * PUBLIC_INTERFACE
@@ -8,6 +8,7 @@ import React, { forwardRef } from 'react';
  * - label?: string
  * - helperText?: string
  * - error?: string | boolean
+ * - id?: string
  * - type?: string (default 'text')
  * - ...rest standard input props
  *
@@ -16,9 +17,13 @@ import React, { forwardRef } from 'react';
  *  <Input label="Title" error="Title is required" />
  */
 const Input = forwardRef(function Input(
-  { label, helperText, error, className = '', style = {}, ...rest },
+  { label, helperText, error, className = '', style = {}, id: idProp, ...rest },
   ref
 ) {
+  const generatedId = useId();
+  const inputId = idProp || generatedId;
+  const helperId = error ? `${inputId}-helper` : undefined;
+
   const wrapper = {
     display: 'flex',
     flexDirection: 'column',
@@ -34,13 +39,13 @@ const Input = forwardRef(function Input(
 
   const inputStyle = {
     width: '100%',
-    padding: '10px 12px',
+    padding: '12px 14px',
     borderRadius: 'var(--radius-md)',
     border: `1px solid ${error ? '#ef4444' : 'var(--border-color)'}`,
     background: 'var(--surface)',
     color: 'var(--text-primary)',
     outline: 'none',
-    fontSize: 14,
+    fontSize: 15,
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
     boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
   };
@@ -54,13 +59,16 @@ const Input = forwardRef(function Input(
   return (
     <div className={className} style={{ ...wrapper, ...style }}>
       {label && (
-        <label style={labelStyle}>
+        <label htmlFor={inputId} style={labelStyle}>
           {label}
         </label>
       )}
       <input
+        id={inputId}
         ref={ref}
         style={inputStyle}
+        aria-invalid={Boolean(error)}
+        aria-describedby={helperId}
         onFocus={(e) => {
           e.currentTarget.style.borderColor = 'var(--link-color)';
           e.currentTarget.style.boxShadow = '0 0 0 3px var(--focus-ring)';
@@ -71,7 +79,7 @@ const Input = forwardRef(function Input(
         }}
         {...rest}
       />
-      <div style={helper}>
+      <div id={helperId} style={helper} aria-live="polite">
         {typeof error === 'string' ? error : helperText}
       </div>
     </div>
