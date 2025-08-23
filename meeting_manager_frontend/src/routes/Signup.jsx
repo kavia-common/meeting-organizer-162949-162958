@@ -5,24 +5,23 @@ import { useAuth } from '../context/AuthContext';
 
 /**
  * PUBLIC_INTERFACE
- * Login
- * Email/password and Google OAuth login UI connected to AuthContext.
+ * Signup
+ * Email/password signup UI connected to AuthContext with Google OAuth option.
  *
  * Behavior:
- * - Validates email/password inputs.
- * - Displays error messages from validation or AuthContext.
- * - On success, redirects to the dashboard or to the originally requested route.
+ * - Validates inputs, shows inline errors.
+ * - On successful signup, if user is created and session exists, redirect to dashboard.
+ * - If email confirmation is required by Supabase, show a toast informing the user to verify email.
  */
-export default function Login() {
-  const { user, loading, signInWithPassword, signInWithGoogle } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '' });
+export default function Signup() {
+  const { user, loading, signUpWithPassword, signInWithGoogle } = useAuth();
+  const [form, setForm] = useState({ email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const toastRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If already authenticated, redirect to dashboard
   useEffect(() => {
     if (!loading && user) {
       navigate('/dashboard', { replace: true });
@@ -40,6 +39,11 @@ export default function Login() {
       next.password = 'Password is required';
     } else if (form.password.length < 6) {
       next.password = 'Minimum 6 characters';
+    }
+    if (!form.confirm) {
+      next.confirm = 'Please confirm your password';
+    } else if (form.password !== form.confirm) {
+      next.confirm = 'Passwords do not match';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -66,19 +70,23 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      const { data, error } = await signInWithPassword(form.email.trim(), form.password);
+      const { data, error } = await signUpWithPassword(form.email.trim(), form.password);
       if (error) {
-        showError('Login failed', error.message || 'An error occurred during login.');
+        showError('Signup failed', error.message || 'An error occurred during signup.');
         return;
       }
-      if (data?.user) {
-        showSuccess('Welcome back', 'Signing you in...');
-        // Redirect to intended path (from ProtectedRoute) or default to /dashboard
+
+      // Supabase may either create a session or require email confirmation
+      if (data?.user && data?.session) {
+        showSuccess('Account created', 'Redirecting to your dashboard...');
         const redirectTo = location.state?.from?.pathname || '/dashboard';
         navigate(redirectTo, { replace: true });
+      } else if (data?.user && !data?.session) {
+        // Email confirmation required
+        showSuccess('Verify your email', 'We sent you a confirmation link. Please verify to sign in.');
       }
     } catch (err) {
-      showError('Login failed', err.message || 'Unexpected error');
+      showError('Signup failed', err.message || 'Unexpected error');
     } finally {
       setSubmitting(false);
     }
@@ -88,13 +96,12 @@ export default function Login() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        showError('Google sign-in failed', error.message || 'An error occurred.');
+        showError('Google sign-up failed', error.message || 'An error occurred.');
       } else {
-        // Supabase OAuth will redirect; no further action here
         showSuccess('Redirecting to Google', 'Please complete authentication...');
       }
     } catch (err) {
-      showError('Google sign-in failed', err.message || 'Unexpected error');
+      showError('Google sign-up failed', err.message || 'Unexpected error');
     }
   };
 
@@ -139,12 +146,12 @@ export default function Login() {
   };
 
   return (
-    <section aria-labelledby="login-title" style={{ width: '100%' }}>
+    <section aria-labelledby="signup-title" style={{ width: '100%' }}>
       <ToastContainer ref={toastRef} />
       <div style={styles.card}>
         <header style={styles.header}>
-          <h1 id="login-title" style={styles.title}>Sign in</h1>
-          <p style={styles.subtitle}>Access your meeting manager</p>
+          <h1 id="signup-title" style={styles.title}>Create account</h1>
+          <p style={styles.subtitle}>Start managing your meetings</p>
         </header>
 
         <form onSubmit={onSubmit} style={styles.formGrid} noValidate>
@@ -163,16 +170,27 @@ export default function Login() {
             label="Password"
             name="password"
             type="password"
-            placeholder="Your password"
+            placeholder="Create a password"
             value={form.password}
             onChange={handleChange}
             error={errors.password}
-            autoComplete="current-password"
+            autoComplete="new-password"
+            required
+          />
+          <Input
+            label="Confirm password"
+            name="confirm"
+            type="password"
+            placeholder="Repeat your password"
+            value={form.confirm}
+            onChange={handleChange}
+            error={errors.confirm}
+            autoComplete="new-password"
             required
           />
           <div style={styles.actions}>
             <Button type="submit" disabled={submitting || loading}>
-              {submitting ? 'Signing in...' : 'Sign in'}
+              {submitting ? 'Creating account...' : 'Sign up'}
             </Button>
             <div style={styles.divider}>or</div>
             <Button type="button" variant="secondary" onClick={onGoogle} disabled={loading}>
@@ -182,8 +200,8 @@ export default function Login() {
         </form>
 
         <div style={styles.footer}>
-          Don&apos;t have an account?{' '}
-          <Link className="link" to="/signup">Create one</Link>
+          Already have an account?{' '}
+          <Link className="link" to="/login">Sign in</Link>
         </div>
       </div>
     </section>

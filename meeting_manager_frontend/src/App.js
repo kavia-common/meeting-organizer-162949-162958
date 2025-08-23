@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Login from './routes/Login';
+import Signup from './routes/Signup';
 import Dashboard from './routes/Dashboard';
 import MeetingDetails from './routes/MeetingDetails';
 import Settings from './routes/Settings';
@@ -36,6 +37,9 @@ function App() {
           <NavLink to="/login" className="App-link" style={{ margin: '0 8px' }}>
             Login
           </NavLink>
+          <NavLink to="/signup" className="App-link" style={{ margin: '0 8px' }}>
+            Signup
+          </NavLink>
           <NavLink to="/dashboard" className="App-link" style={{ margin: '0 8px' }}>
             Dashboard
           </NavLink>
@@ -50,8 +54,9 @@ function App() {
         <main style={{ width: '100%', maxWidth: 900, padding: '0 16px' }}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
-            {/* Public route */}
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             {/* Protected routes */}
             <Route
               path="/dashboard"
