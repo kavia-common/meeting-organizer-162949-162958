@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarView } from '../components/calendar';
 import { Button, Input, Modal, ToastContainer } from '../components/common';
 import MeetingForm from '../components/meetings/MeetingForm';
-import { listMeetings, deleteMeeting } from '../services/meetingsService';
+import { listMeetings, deleteMeeting, createMeeting } from '../services/meetingsService';
 import { useAuth } from '../context/AuthContext';
+import { getGoogleAccessToken, fetchGoogleEvents, toMeetingObjects } from '../services/googleIntegrationService';
 
 /**
  * PUBLIC_INTERFACE
@@ -14,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
  * - Search/filter bar
  * - Upcoming meetings list (next 14 days) with inline actions
  * - Data refresh after CRUD actions
+ * - Import Google Calendar events
  */
 export default function Dashboard() {
   const { user } = useAuth();
@@ -32,6 +34,7 @@ export default function Dashboard() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedForDetails, setSelectedForDetails] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   const toastRef = useRef(null);
 
@@ -54,6 +57,9 @@ export default function Dashboard() {
   };
   const showSuccess = (title, description) => {
     toastRef.current?.show({ title, description, type: 'success' });
+  };
+  const showInfo = (title, description) => {
+    toastRef.current?.show({ title, description, type: 'info' });
   };
 
   // Load upcoming meetings list
@@ -131,6 +137,79 @@ export default function Dashboard() {
     refreshCalendar();
   };
 
+  // PUBLIC_INTERFACE
+  async function importGoogleCalendar(rangeDays = 60) {
+    /**
+     * Dashboard-level import to refresh both Upcoming list and Calendar afterwards.
+     */
+    if (!user?.id) {
+      showError('Not signed in', 'Please sign in to import events.');
+      return;
+    }
+    setImporting(true);
+    try {
+      const { accessToken, error: tokenErr } = await getGoogleAccessToken();
+      if (tokenErr || !accessToken) {
+        throw new Error(tokenErr?.message || 'No Google access token. Connect Google in Settings.');
+      }
+      const now = new Date();
+      const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const timeMax = new Date(now.getTime() + rangeDays * 24 * 60 * 60 * 1000).toISOString();
+      showInfo('Importing...', 'Fetching Google Calendar events');
+
+      const { events, error: fetchErr } = await fetchGoogleEvents({ accessToken, timeMin, timeMax });
+      if (fetchErr) throw new Error(fetchErr.message || 'Failed to fetch Google events');
+
+      const incoming = toMeetingObjects(events || [], user.id);
+
+      // load existing to dedupe
+      const { data: existing, error: listErr } = await listMeetings({
+        userId: user.id,
+        from: timeMin,
+        to: timeMax,
+        orderBy: 'start_time',
+        orderDir: 'asc',
+        limit: 1000,
+      });
+      if (listErr) throw new Error(listErr.message || 'Failed to load existing meetings');
+
+      const existingIds = new Set(
+        (existing || [])
+          .map((m) => m?.external_event_id)
+          .filter((x) => typeof x === 'string' && x.length > 0)
+      );
+
+      const unique = (incoming || []).filter((m) => {
+        const id = m?.external_event_id;
+        return !(id && existingIds.has(id));
+      });
+
+      let created = 0;
+      let failed = 0;
+      for (const item of unique) {
+        if (!item.start_time || !item.end_time || !item.title) continue;
+        const { error } = await createMeeting(item);
+        if (error) failed += 1;
+        else created += 1;
+      }
+      const skipped = (incoming?.length || 0) - created - failed;
+
+      if (created > 0) {
+        showSuccess('Import complete', `Added ${created} new event(s). Skipped ${skipped}.`);
+      } else {
+        showInfo('Nothing to import', `No new events found. Skipped ${skipped}.`);
+      }
+
+      // Refresh UI
+      await loadUpcoming();
+      refreshCalendar();
+    } catch (err) {
+      showError('Import failed', err?.message || 'Unexpected error during import.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   // Search & filters UI handlers
   const styles = {
     headerRow: {
@@ -186,6 +265,8 @@ export default function Dashboard() {
       fontSize: 16,
       fontWeight: 700,
     },
+    row: { display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end' },
+    caption: { fontSize: 12, color: 'var(--muted)' },
   };
 
   const formatDateTime = (iso) => {
@@ -298,7 +379,17 @@ export default function Dashboard() {
       <div style={styles.twoCol}>
         <div>
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>Calendar</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <h2 style={styles.sectionTitle}>Calendar</h2>
+              <div style={styles.row}>
+                <Button onClick={() => importGoogleCalendar(60)} disabled={importing}>
+                  {importing ? 'Importing…' : 'Import Google Calendar'}
+                </Button>
+                <span className="text-muted" style={styles.caption}>
+                  Past week + next 60 days
+                </span>
+              </div>
+            </div>
             {/* key used to force reload after CRUD */}
             <div style={{ marginTop: 8 }}>
               <CalendarView
