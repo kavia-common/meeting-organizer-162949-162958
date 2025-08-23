@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarView } from '../components/calendar';
 import { Button, Input, Modal, ToastContainer, Skeleton } from '../components/common';
 import MeetingForm from '../components/meetings/MeetingForm';
-import { listMeetings, deleteMeeting, createMeeting, subscribeToMeetings } from '../services/meetingsService';
+import { listMeetings, deleteMeeting, createMeeting, subscribeToMeetings, updateMeeting } from '../services/meetingsService';
 import { useAuth } from '../context/AuthContext';
 import { getGoogleAccessToken, fetchGoogleEvents, toMeetingObjects } from '../services/googleIntegrationService';
 
@@ -148,33 +148,50 @@ export default function Dashboard() {
     setQuickAddOpen(true);
   };
 
-  // Delete from list or details
+  // Delete from list or details with optimistic UI
   const onDelete = async (meeting) => {
     if (!meeting?.id) return;
     if (!window.confirm('Delete this meeting? This action cannot be undone.')) return;
+
+    // optimistic remove from upcoming and close details if needed
+    const prevUpcoming = upcoming;
+    setUpcoming((prev) => prev.filter((m) => m.id !== meeting.id));
+    if (detailsOpen && selectedForDetails?.id === meeting.id) {
+      setDetailsOpen(false);
+      setSelectedForDetails(null);
+    }
+    // also nudge calendar so the UI reflects removal immediately
+    refreshCalendar();
+
     try {
       const { error } = await deleteMeeting(meeting.id);
       if (error) throw error;
       showSuccess('Meeting deleted', 'The meeting has been removed.');
-      // refresh list and calendar
-      await loadUpcoming();
-      refreshCalendar();
-      if (detailsOpen) {
-        setDetailsOpen(false);
-        setSelectedForDetails(null);
-      }
+      // background reload to ensure parity
+      loadUpcoming();
     } catch (err) {
-      // Display standardized error content
+      // revert UI
+      setUpcoming(prevUpcoming);
       showError('Delete failed', err?.message || 'Unable to delete meeting.');
     }
   };
 
-  // When MeetingForm succeeds, close modal and refresh
-  const handleFormSuccess = async () => {
+  // When MeetingForm succeeds (server confirmed), close modal and refresh
+  const handleFormSuccess = async (saved) => {
     setQuickAddOpen(false);
     setSelectedForEdit(null);
-    await loadUpcoming();
+    // Merge saved into upcoming if it's within our range, otherwise just do a soft refresh
+    setUpcoming((prev) => {
+      if (!saved?.id) return prev;
+      const exists = prev.some((m) => m.id === saved.id);
+      if (exists) {
+        return prev.map((m) => (m.id === saved.id ? saved : m));
+      }
+      return [saved, ...prev].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    });
     refreshCalendar();
+    // background validation fetch
+    loadUpcoming();
   };
 
   // PUBLIC_INTERFACE
@@ -537,6 +554,30 @@ export default function Dashboard() {
           onCancel={() => {
             setQuickAddOpen(false);
             setSelectedForEdit(null);
+          }}
+          // Optimistic hooks to update Dashboard list immediately
+          onOptimisticCreate={(temp) => {
+            if (!temp) return;
+            setUpcoming((prev) => {
+              // Avoid dupes on temp ids
+              if (prev.some((m) => m.id === temp.id)) return prev;
+              return [temp, ...prev].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+            });
+            refreshCalendar();
+          }}
+          onOptimisticEdit={(temp) => {
+            if (!temp?.id) return;
+            setUpcoming((prev) => prev.map((m) => (m.id === temp.id ? { ...m, ...temp } : m)));
+            refreshCalendar();
+          }}
+          onOptimisticRevert={(prevItem, mode) => {
+            // Revert changes on failure
+            if (mode === 'create' && prevItem) {
+              setUpcoming((prev) => prev.filter((m) => m.id !== prevItem.id));
+            } else if (mode === 'edit' && prevItem) {
+              setUpcoming((prev) => prev.map((m) => (m.id === prevItem.id ? prevItem : m)));
+            }
+            refreshCalendar();
           }}
         />
       </Modal>

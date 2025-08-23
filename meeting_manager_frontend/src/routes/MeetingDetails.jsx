@@ -241,8 +241,20 @@ export default function MeetingDetails() {
           <MeetingForm
             mode="edit"
             initialValues={meeting}
-            onSuccess={onEditSuccess}
+            onSuccess={(saved) => {
+              // optimistic already updated; ensure local meeting reflects latest and refresh
+              setMeeting(saved || meeting);
+              onEditSuccess();
+            }}
             onCancel={() => setEditOpen(false)}
+            onOptimisticEdit={(temp) => {
+              // instantly reflect edits in this view
+              setMeeting((prev) => ({ ...(prev || {}), ...(temp || {}) }));
+            }}
+            onOptimisticRevert={(prevItem) => {
+              // revert meeting view
+              if (prevItem?.id) setMeeting(prevItem);
+            }}
           />
         ) : (
           <div className="text-muted">Nothing to edit.</div>

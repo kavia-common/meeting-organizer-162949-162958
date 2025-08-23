@@ -40,6 +40,10 @@ export default function MeetingForm({
   onCancel,
   onError,
   enableService = true,
+  // Optimistic UI coordination with parent (Dashboard/Details)
+  onOptimisticCreate,
+  onOptimisticEdit,
+  onOptimisticRevert,
 }) {
   const isEdit = mode === 'edit';
 
@@ -163,36 +167,52 @@ export default function MeetingForm({
     }
 
     if (!enableService) {
+      const mock = buildMockResult(form, isEdit);
+      // optimistic for mock
+      if (isEdit) {
+        onOptimisticEdit?.(mock);
+      } else {
+        onOptimisticCreate?.(mock);
+      }
       showSuccess(isEdit ? 'Updated (mock)' : 'Created (mock)', 'Service disabled for this environment.');
-      onSuccess?.(buildMockResult(form, isEdit));
+      onSuccess?.(mock);
       return;
     }
 
     setSubmitting(true);
+
+    // Build optimistic item
+    const optimisticItem = buildMockResult(form, isEdit);
+    const prevForRevert = isEdit ? initialValues : optimisticItem;
+
+    // Fire optimistic callback
+    if (isEdit) onOptimisticEdit?.(optimisticItem);
+    else onOptimisticCreate?.(optimisticItem);
+
     try {
       if (isEdit) {
         const id = initialValues?.id;
-        if (!id) {
-          throw new Error('Missing meeting id for edit operation.');
-        }
+        if (!id) throw new Error('Missing meeting id for edit operation.');
         const payload = buildPayload();
         const { data, error } = await updateMeeting(id, payload);
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
         showSuccess('Meeting updated', 'Your changes have been saved.');
         onSuccess?.(data);
       } else {
         const payload = buildPayload();
         const { data, error } = await createMeeting(payload);
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
         showSuccess('Meeting created', 'Your meeting was added.');
         onSuccess?.(data);
       }
     } catch (err) {
       const msg = err?.message || 'An error occurred while saving the meeting.';
+      // revert optimistic change
+      try {
+        onOptimisticRevert?.(prevForRevert, isEdit ? 'edit' : 'create');
+      } catch {
+        // no-op
+      }
       // Show consistent, user-friendly toast without altering layout
       showError(isEdit ? 'Update failed' : 'Create failed', msg);
       onError?.(err);
