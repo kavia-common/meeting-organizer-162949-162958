@@ -81,6 +81,7 @@ export default function Dashboard() {
       setUpcoming(Array.isArray(data) ? data : []);
     } catch (err) {
       setUpcoming([]);
+      // Consistent, normalized error handling
       showError('Failed to load upcoming meetings', err?.message || 'Unknown error');
     } finally {
       setLoading(false);
@@ -163,6 +164,7 @@ export default function Dashboard() {
         setSelectedForDetails(null);
       }
     } catch (err) {
+      // Display standardized error content
       showError('Delete failed', err?.message || 'Unable to delete meeting.');
     }
   };

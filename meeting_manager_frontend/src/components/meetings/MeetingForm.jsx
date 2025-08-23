@@ -193,6 +193,7 @@ export default function MeetingForm({
       }
     } catch (err) {
       const msg = err?.message || 'An error occurred while saving the meeting.';
+      // Show consistent, user-friendly toast without altering layout
       showError(isEdit ? 'Update failed' : 'Create failed', msg);
       onError?.(err);
     } finally {

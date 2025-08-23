@@ -37,6 +37,7 @@ export default function MeetingDetails() {
       if (error) throw error;
       setMeeting(data);
     } catch (err) {
+      // Use consistent, centralized message
       setErrorMsg(err?.message || 'Failed to load meeting.');
       setMeeting(null);
     } finally {
@@ -57,6 +58,7 @@ export default function MeetingDetails() {
       showSuccess('Meeting deleted', 'The meeting has been removed.');
       navigate('/dashboard', { replace: true });
     } catch (err) {
+      // Display standardized error
       showError('Delete failed', err?.message || 'Unable to delete meeting.');
     }
   };

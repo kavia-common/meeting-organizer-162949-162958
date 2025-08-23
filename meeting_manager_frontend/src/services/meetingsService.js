@@ -12,6 +12,32 @@ import { supabase } from '../lib/supabaseClient';
  * - Uses the Meeting types defined in src/types/index.d.ts (namespace MeetingManager).
  */
 
+// Normalize any error coming from Supabase/fetch/unknown into a user-friendly Error with message
+function normalizeError(err, fallback = 'Unexpected error') {
+  try {
+    if (!err) return new Error(fallback);
+    // If Supabase error object
+    if (typeof err === 'object') {
+      const code = err.code || err.status || err.error?.code;
+      const msg =
+        err.message ||
+        err.msg ||
+        err.error_description ||
+        err.error ||
+        err.details ||
+        (typeof err.toString === 'function' ? String(err) : null) ||
+        fallback;
+      const e = new Error(msg);
+      if (code) e.code = code;
+      return e;
+    }
+    // Primitive
+    return new Error(String(err));
+  } catch {
+    return new Error(fallback);
+  }
+}
+
 /**
  * PUBLIC_INTERFACE
  * buildQuery
@@ -42,47 +68,27 @@ function buildQuery(params = {}) {
     orderDir = 'asc',
   } = params;
 
-  let query = supabase
-    .from('meetings')
-    .select('*', { count: 'exact' });
+  let query = supabase.from('meetings').select('*', { count: 'exact' });
 
-  // Filter by owner
-  if (userId) {
-    query = query.eq('user_id', userId);
-  }
+  if (userId) query = query.eq('user_id', userId);
+  if (from) query = query.gte('start_time', from);
+  if (to) query = query.lte('start_time', to);
 
-  // Date range filters
-  if (from) {
-    query = query.gte('start_time', from);
-  }
-  if (to) {
-    query = query.lte('start_time', to);
-  }
-
-  // Tags filters
-  // tagsAny: overlap (&&) operator matches any tags
   if (Array.isArray(tagsAny) && tagsAny.length > 0) {
     query = query.overlaps('tags', tagsAny);
   }
-  // tagsAll: contains (@>) operator matches all tags
   if (Array.isArray(tagsAll) && tagsAll.length > 0) {
     query = query.contains('tags', tagsAll);
   }
 
-  // Full-text like search across common textual fields
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
-    // Use or() to apply ilike across multiple columns.
-    // Note: or() requires a single string with comma-separated conditions wrapped in '()'
     query = query.or(
       `title.ilike.${term},description.ilike.${term},location.ilike.${term},notes.ilike.${term}`
     );
   }
 
-  // Ordering, pagination
-  query = query
-    .order(orderBy, { ascending: orderDir !== 'desc' })
-    .range(offset, offset + limit - 1);
+  query = query.order(orderBy, { ascending: orderDir !== 'desc' }).range(offset, offset + limit - 1);
 
   return query;
 }
@@ -99,9 +105,9 @@ export async function listMeetings(params = {}) {
   try {
     const query = buildQuery(params);
     const { data, error, count } = await query;
-    return { data, count: count ?? null, error };
+    return { data, count: count ?? null, error: error ? normalizeError(error, 'Failed to load meetings') : null };
   } catch (err) {
-    return { data: null, count: null, error: err };
+    return { data: null, count: null, error: normalizeError(err, 'Failed to load meetings') };
   }
 }
 
@@ -115,14 +121,10 @@ export async function listMeetings(params = {}) {
  */
 export async function getMeeting(id) {
   try {
-    const { data, error } = await supabase
-      .from('meetings')
-      .select('*')
-      .eq('id', id)
-      .single();
-    return { data, error };
+    const { data, error } = await supabase.from('meetings').select('*').eq('id', id).single();
+    return { data, error: error ? normalizeError(error, 'Failed to load meeting') : null };
   } catch (err) {
-    return { data: null, error: err };
+    return { data: null, error: normalizeError(err, 'Failed to load meeting') };
   }
 }
 
@@ -136,21 +138,16 @@ export async function getMeeting(id) {
  */
 export async function createMeeting(payload) {
   try {
-    // Ensure default arrays if not provided
     const body = {
       attendees: [],
       tags: [],
       reminders: [],
       ...payload,
     };
-    const { data, error } = await supabase
-      .from('meetings')
-      .insert([body])
-      .select('*')
-      .single();
-    return { data, error };
+    const { data, error } = await supabase.from('meetings').insert([body]).select('*').single();
+    return { data, error: error ? normalizeError(error, 'Failed to create meeting') : null };
   } catch (err) {
-    return { data: null, error: err };
+    return { data: null, error: normalizeError(err, 'Failed to create meeting') };
   }
 }
 
@@ -171,9 +168,9 @@ export async function updateMeeting(id, updates) {
       .eq('id', id)
       .select('*')
       .single();
-    return { data, error };
+    return { data, error: error ? normalizeError(error, 'Failed to update meeting') : null };
   } catch (err) {
-    return { data: null, error: err };
+    return { data: null, error: normalizeError(err, 'Failed to update meeting') };
   }
 }
 
@@ -188,9 +185,9 @@ export async function updateMeeting(id, updates) {
 export async function deleteMeeting(id) {
   try {
     const { error } = await supabase.from('meetings').delete().eq('id', id);
-    return { success: !error, error };
+    return { success: !error, error: error ? normalizeError(error, 'Failed to delete meeting') : null };
   } catch (err) {
-    return { success: false, error: err };
+    return { success: false, error: normalizeError(err, 'Failed to delete meeting') };
   }
 }
 
@@ -199,22 +196,6 @@ export async function deleteMeeting(id) {
  * subscribeToMeetings
  * Subscribes to Supabase Realtime changes on the 'meetings' table and invokes callbacks
  * for insert, update, and delete events. Returns an unsubscribe function to clean up.
- *
- * Usage:
- *  const unsubscribe = subscribeToMeetings({
- *    filter: { userId: currentUserId }, // optional: filter events by user_id
- *    onInsert: (row) => { ... },
- *    onUpdate: (row) => { ... },
- *    onDelete: (row) => { ... },
- *    onError: (err) => { ... },
- *  });
- *  // later:
- *  unsubscribe();
- *
- * Notes:
- * - Uses the singleton supabase client from lib/supabaseClient.
- * - If filter.userId is provided, only events for that user_id will trigger callbacks.
- * - Ensures channel is removed when unsubscribing.
  *
  * @param {Object} options
  * @param {{ userId?: string }} [options.filter]
@@ -225,19 +206,10 @@ export async function deleteMeeting(id) {
  * @returns {() => void} unsubscribe function
  */
 export function subscribeToMeetings(options = {}) {
-  const {
-    filter = {},
-    onInsert,
-    onUpdate,
-    onDelete,
-    onError,
-  } = options;
+  const { filter = {}, onInsert, onUpdate, onDelete, onError } = options;
 
-  // Build a filter for Realtime using table and optional schema.
-  // Supabase v2 Realtime channel uses "postgres_changes" with event, schema, and table.
   const channel = supabase.channel('realtime:meetings');
 
-  // Utility to guard userId filter checks
   const matchesFilter = (row) => {
     if (!filter || !filter.userId) return true;
     try {
@@ -248,62 +220,41 @@ export function subscribeToMeetings(options = {}) {
   };
 
   channel
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'meetings' },
-      (payload) => {
-        try {
-          const row = payload?.new;
-          if (matchesFilter(row)) {
-            onInsert?.(row);
-          }
-        } catch (e) {
-          onError?.(e);
-        }
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meetings' }, (payload) => {
+      try {
+        const row = payload?.new;
+        if (matchesFilter(row)) onInsert?.(row);
+      } catch (e) {
+        onError?.(normalizeError(e, 'Realtime insert handler failed'));
       }
-    )
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'meetings' },
-      (payload) => {
-        try {
-          const row = payload?.new;
-          if (matchesFilter(row)) {
-            onUpdate?.(row);
-          }
-        } catch (e) {
-          onError?.(e);
-        }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'meetings' }, (payload) => {
+      try {
+        const row = payload?.new;
+        if (matchesFilter(row)) onUpdate?.(row);
+      } catch (e) {
+        onError?.(normalizeError(e, 'Realtime update handler failed'));
       }
-    )
-    .on(
-      'postgres_changes',
-      { event: 'DELETE', schema: 'public', table: 'meetings' },
-      (payload) => {
-        try {
-          // For DELETE events, the row is under 'old'
-          const row = payload?.old;
-          if (matchesFilter(row)) {
-            onDelete?.(row);
-          }
-        } catch (e) {
-          onError?.(e);
-        }
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'meetings' }, (payload) => {
+      try {
+        const row = payload?.old;
+        if (matchesFilter(row)) onDelete?.(row);
+      } catch (e) {
+        onError?.(normalizeError(e, 'Realtime delete handler failed'));
       }
-    )
+    })
     .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
         onError?.(new Error('Realtime channel error for meetings'));
       }
     });
 
-  // Return unsubscribe function to remove the channel cleanly
   return () => {
     try {
       supabase.removeChannel(channel);
     } catch (e) {
-      // Non-fatal; surface to caller if they provided onError
-      onError?.(e);
+      onError?.(normalizeError(e, 'Failed to remove realtime channel'));
     }
   };
 }
