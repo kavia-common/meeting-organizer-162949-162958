@@ -1,4 +1,5 @@
 import React from 'react';
+import { CalendarView } from '../components/calendar';
 
 /**
  * PUBLIC_INTERFACE
@@ -8,7 +9,10 @@ export default function Dashboard() {
   return (
     <section>
       <h1>Dashboard</h1>
-      <p>Overview of meetings and calendar will appear here.</p>
+      <p className="text-muted">Overview of meetings and calendar will appear here.</p>
+      <div style={{ marginTop: 16 }}>
+        <CalendarView initialView="month" enableService={true} />
+      </div>
     </section>
   );
 }
