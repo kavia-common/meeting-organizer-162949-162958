@@ -16,6 +16,30 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
  * - Auth routes (/login, /signup) render standalone without dashboard navigation/sidebar.
  * - Protected app routes are wrapped in DashboardLayout and require authentication.
  */
+import { useAuth } from './context/AuthContext';
+
+/**
+ * PUBLIC_INTERFACE
+ * RootRedirect
+ * Decides where to send the user when landing on "/".
+ * - While auth is loading: shows a brief message.
+ * - If authenticated: navigates to /dashboard.
+ * - Otherwise: navigates to /login.
+ */
+function RootRedirect() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Preparing your workspace...
+      </div>
+    );
+  }
+
+  return <Navigate to={user ? '/dashboard' : '/login'} replace />;
+}
+
 function App() {
   const [theme, setTheme] = useState('light');
 
@@ -46,8 +70,11 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Default redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Root route: decide destination based on auth status */}
+        <Route
+          path="/"
+          element={<RootRedirect />}
+        />
 
         {/* Public auth routes - no DashboardLayout, no sidebar */}
         <Route
