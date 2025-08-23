@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarView } from '../components/calendar';
 import { Button, Input, Modal, ToastContainer } from '../components/common';
 import MeetingForm from '../components/meetings/MeetingForm';
-import { listMeetings, deleteMeeting, createMeeting } from '../services/meetingsService';
+import { listMeetings, deleteMeeting, createMeeting, subscribeToMeetings } from '../services/meetingsService';
 import { useAuth } from '../context/AuthContext';
 import { getGoogleAccessToken, fetchGoogleEvents, toMeetingObjects } from '../services/googleIntegrationService';
 
@@ -90,6 +90,44 @@ export default function Dashboard() {
   useEffect(() => {
     loadUpcoming();
   }, [loadUpcoming]);
+
+  // Realtime: subscribe to meetings changes for current user and refresh UI
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Define a debounced refresher to avoid too frequent reloads
+    let rafId = null;
+    const triggerRefresh = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(async () => {
+        await loadUpcoming();
+        refreshCalendar();
+      });
+    };
+
+    const unsubscribe = subscribeToMeetings({
+      filter: { userId: user.id },
+      onInsert: () => triggerRefresh(),
+      onUpdate: () => triggerRefresh(),
+      onDelete: () => triggerRefresh(),
+      onError: (e) => {
+        // non-fatal; surface as a toast in dev or silently ignore in prod
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn('[Dashboard] Realtime subscription error:', e?.message || e);
+        }
+      },
+    });
+
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        /* noop */
+      }
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [user?.id, loadUpcoming, refreshCalendar]);
 
   // Calendar interaction: clicking a meeting opens details modal with quick actions
   const handleCalendarMeetingClick = (meeting) => {
