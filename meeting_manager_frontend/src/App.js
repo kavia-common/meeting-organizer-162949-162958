@@ -5,6 +5,7 @@ import Login from './routes/Login';
 import Dashboard from './routes/Dashboard';
 import MeetingDetails from './routes/MeetingDetails';
 import Settings from './routes/Settings';
+import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 
 // PUBLIC_INTERFACE
 function App() {
@@ -49,10 +50,33 @@ function App() {
         <main style={{ width: '100%', maxWidth: 900, padding: '0 16px' }}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Public route */}
             <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/meetings/:id" element={<MeetingDetails />} />
-            <Route path="/settings" element={<Settings />} />
+            {/* Protected routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meetings/:id"
+              element={
+                <ProtectedRoute>
+                  <MeetingDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<div>Not Found</div>} />
           </Routes>
         </main>
