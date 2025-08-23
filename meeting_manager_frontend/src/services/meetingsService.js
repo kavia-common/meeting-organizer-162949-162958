@@ -193,3 +193,117 @@ export async function deleteMeeting(id) {
     return { success: false, error: err };
   }
 }
+
+/**
+ * PUBLIC_INTERFACE
+ * subscribeToMeetings
+ * Subscribes to Supabase Realtime changes on the 'meetings' table and invokes callbacks
+ * for insert, update, and delete events. Returns an unsubscribe function to clean up.
+ *
+ * Usage:
+ *  const unsubscribe = subscribeToMeetings({
+ *    filter: { userId: currentUserId }, // optional: filter events by user_id
+ *    onInsert: (row) => { ... },
+ *    onUpdate: (row) => { ... },
+ *    onDelete: (row) => { ... },
+ *    onError: (err) => { ... },
+ *  });
+ *  // later:
+ *  unsubscribe();
+ *
+ * Notes:
+ * - Uses the singleton supabase client from lib/supabaseClient.
+ * - If filter.userId is provided, only events for that user_id will trigger callbacks.
+ * - Ensures channel is removed when unsubscribing.
+ *
+ * @param {Object} options
+ * @param {{ userId?: string }} [options.filter]
+ * @param {(row: MeetingManager.Meeting) => void} [options.onInsert]
+ * @param {(row: MeetingManager.Meeting) => void} [options.onUpdate]
+ * @param {(row: MeetingManager.Meeting) => void} [options.onDelete]
+ * @param {(error: any) => void} [options.onError]
+ * @returns {() => void} unsubscribe function
+ */
+export function subscribeToMeetings(options = {}) {
+  const {
+    filter = {},
+    onInsert,
+    onUpdate,
+    onDelete,
+    onError,
+  } = options;
+
+  // Build a filter for Realtime using table and optional schema.
+  // Supabase v2 Realtime channel uses "postgres_changes" with event, schema, and table.
+  const channel = supabase.channel('realtime:meetings');
+
+  // Utility to guard userId filter checks
+  const matchesFilter = (row) => {
+    if (!filter || !filter.userId) return true;
+    try {
+      return row?.user_id === filter.userId;
+    } catch {
+      return true;
+    }
+  };
+
+  channel
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'meetings' },
+      (payload) => {
+        try {
+          const row = payload?.new;
+          if (matchesFilter(row)) {
+            onInsert?.(row);
+          }
+        } catch (e) {
+          onError?.(e);
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'meetings' },
+      (payload) => {
+        try {
+          const row = payload?.new;
+          if (matchesFilter(row)) {
+            onUpdate?.(row);
+          }
+        } catch (e) {
+          onError?.(e);
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'meetings' },
+      (payload) => {
+        try {
+          // For DELETE events, the row is under 'old'
+          const row = payload?.old;
+          if (matchesFilter(row)) {
+            onDelete?.(row);
+          }
+        } catch (e) {
+          onError?.(e);
+        }
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') {
+        onError?.(new Error('Realtime channel error for meetings'));
+      }
+    });
+
+  // Return unsubscribe function to remove the channel cleanly
+  return () => {
+    try {
+      supabase.removeChannel(channel);
+    } catch (e) {
+      // Non-fatal; surface to caller if they provided onError
+      onError?.(e);
+    }
+  };
+}
