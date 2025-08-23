@@ -1,0 +1,62 @@
+:root {
+  /* Brand colors */
+  --color-primary: #1976d2;   /* Primary */
+  --color-secondary: #424242; /* Secondary */
+  --color-accent: #ff9800;    /* Accent */
+
+  /* Light theme base colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+
+  /* Text colors for light theme */
+  --text-primary: #1a1a1a;
+  --text-secondary: #424242;
+
+  /* Border and surfaces */
+  --border-color: #e9ecef;
+  --surface: #ffffff;
+  --muted: #6b7280;
+
+  /* Interactive elements (derived) */
+  --link-color: var(--color-primary);
+  --button-bg: var(--color-primary);
+  --button-text: #ffffff;
+  --focus-ring: rgba(25, 118, 210, 0.4);
+
+  /* Spacing and radius tokens for consistency */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+}
+
+/* Base light theme application */
+html, body, #root {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Accessible focus outline using primary */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Utility classes */
+.text-muted {
+  color: var(--muted);
+}
+
+.link {
+  color: var(--link-color);
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}

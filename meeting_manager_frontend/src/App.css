@@ -1,26 +1,6 @@
-/* CSS Variables for Theme Management */
-:root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #282c34;
-  --text-secondary: #61dafb;
-  --border-color: #e9ecef;
-  --button-bg: #007bff;
-  --button-text: #ffffff;
-}
+@import './theme.css';
 
-[data-theme="dark"] {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #282c34;
-  --text-primary: #ffffff;
-  --text-secondary: #61dafb;
-  --border-color: #404040;
-  --button-bg: #0056b3;
-  --button-text: #ffffff;
-}
-
+/* App global styles leveraging theme variables */
 .App {
   text-align: center;
   background-color: var(--bg-primary);
@@ -54,10 +34,11 @@
 }
 
 .App-link {
-  color: var(--text-secondary);
+  color: var(--link-color);
   transition: color 0.3s ease;
 }
 
+/* Buttons should use brand primary by default */
 .theme-toggle {
   position: absolute;
   top: 20px;
@@ -65,7 +46,7 @@
   background-color: var(--button-bg);
   color: var(--button-text);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
@@ -73,24 +54,31 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
 .theme-toggle:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  opacity: 0.9;
+  opacity: 0.95;
 }
-
 .theme-toggle:active {
   transform: translateY(0);
 }
 
+/* Accent utility for highlighting elements */
+.accent {
+  color: var(--color-accent);
+}
+
+/* Secondary toned surfaces */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+/* Animations */
 @keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive design for mobile */
