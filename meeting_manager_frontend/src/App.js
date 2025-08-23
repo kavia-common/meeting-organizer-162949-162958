@@ -1,46 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import Login from './routes/Login';
+import Dashboard from './routes/Dashboard';
+import MeetingDetails from './routes/MeetingDetails';
+import Settings from './routes/Settings';
 
 // PUBLIC_INTERFACE
 function App() {
   const [theme, setTheme] = useState('light');
 
-  // Effect to apply theme to document element
+  // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   // PUBLIC_INTERFACE
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
   return (
     <div className="App">
       <header className="App-header">
-        <button 
-          className="theme-toggle" 
+        <button
+          className="theme-toggle"
           onClick={toggleTheme}
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
           {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
         </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+
+        <nav style={{ marginBottom: 24 }}>
+          <NavLink to="/login" className="App-link" style={{ margin: '0 8px' }}>
+            Login
+          </NavLink>
+          <NavLink to="/dashboard" className="App-link" style={{ margin: '0 8px' }}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/meetings/123" className="App-link" style={{ margin: '0 8px' }}>
+            Meeting 123
+          </NavLink>
+          <NavLink to="/settings" className="App-link" style={{ margin: '0 8px' }}>
+            Settings
+          </NavLink>
+        </nav>
+
+        <main style={{ width: '100%', maxWidth: 900, padding: '0 16px' }}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/meetings/:id" element={<MeetingDetails />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<div>Not Found</div>} />
+          </Routes>
+        </main>
       </header>
     </div>
   );
