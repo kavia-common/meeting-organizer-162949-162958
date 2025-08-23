@@ -32,6 +32,9 @@ export default function Button({
     textDecoration: 'none',
     userSelect: 'none',
     whiteSpace: 'nowrap',
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   };
 
   const sizeStyles = {

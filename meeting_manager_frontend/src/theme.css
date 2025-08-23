@@ -41,6 +41,7 @@ html, body, #root {
   min-height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
+  overflow-x: hidden;
 }
 
 /* Accessible focus outline using primary */

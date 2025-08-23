@@ -100,7 +100,7 @@ export default function Login() {
   };
 
   return (
-    <section aria-labelledby="login-title" style={{ width: '100%' }}>
+    <section aria-labelledby="login-title" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       <ToastContainer ref={toastRef} />
       <AuthForm
         title="Sign in"

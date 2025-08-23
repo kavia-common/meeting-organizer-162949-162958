@@ -31,6 +31,8 @@ export default function AuthForm({
     justifyItems: 'center',
     minHeight: 'calc(100vh - 80px)',
     padding: 'var(--space-6) var(--space-4)',
+    width: '100%',
+    boxSizing: 'border-box',
   };
 
   const card = {
@@ -41,6 +43,8 @@ export default function AuthForm({
     boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
     width: '100%',
     maxWidth: 460,
+    boxSizing: 'border-box',
+    overflow: 'hidden',
   };
 
   const header = {
@@ -63,6 +67,8 @@ export default function AuthForm({
   const formGrid = {
     display: 'grid',
     gap: 'var(--space-4)',
+    width: '100%',
+    boxSizing: 'border-box',
   };
 
   const actionsStyle = {
@@ -70,6 +76,7 @@ export default function AuthForm({
     flexDirection: 'column',
     gap: 'var(--space-3)',
     marginTop: 'var(--space-2)',
+    width: '100%',
   };
 
   const divider = {
@@ -79,6 +86,8 @@ export default function AuthForm({
     color: 'var(--muted)',
     fontSize: 12,
     alignSelf: 'stretch',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   };
 
   const dividerLine = {
@@ -91,6 +100,8 @@ export default function AuthForm({
     textAlign: 'center',
     marginTop: 'var(--space-4)',
     fontSize: 14,
+    width: '100%',
+    boxSizing: 'border-box',
   };
 
   return (

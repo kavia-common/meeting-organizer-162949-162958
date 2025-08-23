@@ -29,6 +29,8 @@ const Input = forwardRef(function Input(
     flexDirection: 'column',
     gap: '6px',
     width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   };
 
   const labelStyle = {
@@ -39,6 +41,8 @@ const Input = forwardRef(function Input(
 
   const inputStyle = {
     width: '100%',
+    maxWidth: '100%',
+    minWidth: 0,
     padding: '12px 14px',
     borderRadius: 'var(--radius-md)',
     border: `1px solid ${error ? '#ef4444' : 'var(--border-color)'}`,
@@ -48,6 +52,7 @@ const Input = forwardRef(function Input(
     fontSize: 15,
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
     boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+    boxSizing: 'border-box',
   };
 
   const helper = {

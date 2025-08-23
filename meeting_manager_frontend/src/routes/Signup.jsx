@@ -107,7 +107,7 @@ export default function Signup() {
   };
 
   return (
-    <section aria-labelledby="signup-title" style={{ width: '100%' }}>
+    <section aria-labelledby="signup-title" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       <ToastContainer ref={toastRef} />
       <AuthForm
         title="Create account"
