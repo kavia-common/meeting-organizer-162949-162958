@@ -100,7 +100,14 @@ export default function GoogleConnect() {
           undefined,
         // Request calendar scopes if planning to integrate with Google Calendar
         // You can adjust scopes later to least privilege
-        scopes: 'https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.readonly',
+        scopes:
+          'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly',
+        // Force re-consent to ensure new scopes are granted if previously connected without them.
+        // access_type=offline may be required to receive long-lived refresh tokens; harmless for our read-only use.
+        queryParams: {
+          prompt: 'consent',
+          access_type: 'offline',
+        },
       });
       if (error) {
         showError('Google connection failed', error.message || 'An unexpected error occurred.');

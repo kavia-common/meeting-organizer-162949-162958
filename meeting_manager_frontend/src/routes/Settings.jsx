@@ -65,7 +65,13 @@ export default function Settings() {
 
       const { events, error: fetchErr } = await fetchGoogleEvents({ accessToken, timeMin, timeMax });
       if (fetchErr) {
-        throw new Error(fetchErr.message || 'Failed to fetch Google events');
+        // Surface guidance if likely a permissions issue
+        const msg = fetchErr.message || 'Failed to fetch Google events';
+        const hint =
+          msg.includes('403') || msg.toLowerCase().includes('insufficient')
+            ? ' Please reconnect Google and ensure calendar read permissions are granted.'
+            : '';
+        throw new Error(msg + hint);
       }
 
       const incoming = toMeetingObjects(events || [], user.id);

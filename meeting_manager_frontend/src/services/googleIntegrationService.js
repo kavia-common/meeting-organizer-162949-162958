@@ -39,6 +39,10 @@ import supabase from '../lib/supabaseClient';
  * - session.provider_refresh_token (not used directly here)
  */
 export async function getGoogleAccessToken() {
+  /**
+   * Attempts to read a Google OAuth access token from the current Supabase session.
+   * Tries several locations due to differences across Supabase versions/configurations.
+   */
   try {
     const { data, error } = await supabase.auth.getSession();
     if (error) return { accessToken: null, error };
@@ -48,28 +52,42 @@ export async function getGoogleAccessToken() {
       return { accessToken: null, error: new Error('No active session') };
     }
 
-    // 1) Direct provider_token on session
+    // 1) Direct provider token on session (most common)
     if (session.provider_token) {
       return { accessToken: session.provider_token, error: null };
     }
 
-    // 2) Try session.user.identities
-    const identities = Array.isArray(session.user?.identities) ? session.user.identities : [];
-    const googleIdentity = identities.find((i) => i?.provider === 'google');
-
-    // Some installations place token info in identity_data; not guaranteed client-side.
-    // We try to read what might be available.
-    const identityData = googleIdentity?.identity_data || googleIdentity?.identityData || {};
-    const tokenFromIdentity =
-      identityData.access_token ||
-      identityData.token ||
-      null;
-
-    if (tokenFromIdentity) {
-      return { accessToken: tokenFromIdentity, error: null };
+    // 2) Sometimes access token is in user metadata
+    const metaCandidates = [
+      session.user?.user_metadata?.provider_token,
+      session.user?.user_metadata?.access_token,
+      session.user?.app_metadata?.provider_token,
+    ].filter(Boolean);
+    if (metaCandidates.length > 0) {
+      return { accessToken: metaCandidates[0], error: null };
     }
 
-    return { accessToken: null, error: new Error('Google access token not found on session. Please reconnect Google.') };
+    // 3) Check identities array
+    const identities = Array.isArray(session.user?.identities) ? session.user.identities : [];
+    const googleIdentity = identities.find((i) => i?.provider === 'google');
+    const identityData = googleIdentity?.identity_data || googleIdentity?.identityData || {};
+    const identityTokenCandidates = [
+      identityData.access_token,
+      identityData.provider_token,
+      identityData.oauth_access_token,
+      identityData.token,
+    ].filter((v) => typeof v === 'string' && v.length > 0);
+
+    if (identityTokenCandidates.length > 0) {
+      return { accessToken: identityTokenCandidates[0], error: null };
+    }
+
+    return {
+      accessToken: null,
+      error: new Error(
+        'Google access token not found on session. Please reconnect Google from Settings to grant calendar access.'
+      ),
+    };
   } catch (err) {
     return { accessToken: null, error: err };
   }
@@ -126,12 +144,18 @@ export async function fetchGoogleEvents({
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
+        // Explicitly request JSON in case some environments require it
+        Accept: 'application/json',
       },
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`Google API error (${res.status}): ${text || res.statusText}`);
+      // Common case: 403 insufficient permissions when scopes are missing
+      const enhanced = text && text.includes('insufficientPermissions')
+        ? 'Insufficient permissions. Please reconnect Google and grant calendar read permissions.'
+        : '';
+      throw new Error(`Google API error (${res.status}): ${text || res.statusText}${enhanced ? ` - ${enhanced}` : ''}`);
     }
 
     const json = await res.json();
@@ -256,6 +280,37 @@ function isValidISO(v) {
   try {
     const d = new Date(v);
     return !isNaN(d.getTime());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * hasCalendarScope
+ * Best-effort detection of whether the current session has Google Calendar read scopes.
+ * Since the exact storage of scopes is not guaranteed on the client, this is heuristic.
+ */
+export async function hasCalendarScope() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const session = data?.session || null;
+    if (!session) return false;
+
+    // Some setups include granted scopes in user_metadata or app_metadata
+    const scopeSources = [
+      session.user?.user_metadata?.scopes,
+      session.user?.app_metadata?.scopes,
+      session.user?.identities?.find?.((i) => i?.provider === 'google')?.identity_data?.scopes,
+    ].filter(Boolean);
+
+    const allScopes = (scopeSources.join?.(' ') || (Array.isArray(scopeSources) ? scopeSources.join(' ') : '')).toString();
+
+    return (
+      typeof allScopes === 'string' &&
+      (allScopes.includes('https://www.googleapis.com/auth/calendar.readonly') ||
+        allScopes.includes('https://www.googleapis.com/auth/calendar.events.readonly'))
+    );
   } catch {
     return false;
   }
