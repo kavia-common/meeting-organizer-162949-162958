@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarView } from '../components/calendar';
-import { Button, Input, Modal, ToastContainer } from '../components/common';
+import { Button, Input, Modal, ToastContainer, Skeleton } from '../components/common';
 import MeetingForm from '../components/meetings/MeetingForm';
 import { listMeetings, deleteMeeting, createMeeting, subscribeToMeetings } from '../services/meetingsService';
 import { useAuth } from '../context/AuthContext';
@@ -449,43 +449,69 @@ export default function Dashboard() {
               Showing meetings from {dateRange.from.toLocaleDateString()} to {dateRange.to.toLocaleDateString()}
             </div>
             <div style={styles.list}>
-              {upcoming.length === 0 && (
-                <div className="text-muted">No upcoming meetings in the selected range.</div>
-              )}
-              {upcoming.map((m) => (
-                <div key={m.id} style={styles.listItem}>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{m.title}</div>
-                    <div style={styles.listMeta}>
-                      {formatDateTime(m.start_time)} — {formatDateTime(m.end_time)}
-                      {m.location ? ` • ${m.location}` : ''}
-                    </div>
-                    {Array.isArray(m.tags) && m.tags.length > 0 && (
-                      <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {m.tags.map((t) => (
-                          <span
-                            key={t}
-                            style={{
-                              padding: '2px 6px',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: 6,
-                              fontSize: 12,
-                              color: 'var(--text-secondary)',
-                              background: 'var(--bg-primary)',
-                            }}
-                          >
-                            #{t}
-                          </span>
-                        ))}
+              {loading ? (
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={`s-${i}`} style={styles.listItem}>
+                      <div style={{ width: '100%' }}>
+                        <Skeleton width="60%" height={16} />
+                        <div style={{ marginTop: 6 }}>
+                          <Skeleton width="40%" height={12} />
+                        </div>
+                        <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                          <Skeleton width={60} height={18} />
+                          <Skeleton width={72} height={18} />
+                          <Skeleton width={50} height={18} />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div style={styles.actionsRow}>
-                    <Button variant="secondary" onClick={() => onEdit(m)}>Edit</Button>
-                    <Button variant="secondary" onClick={() => onDelete(m)}>Delete</Button>
-                  </div>
-                </div>
-              ))}
+                      <div style={styles.actionsRow}>
+                        <Skeleton width={64} height={32} />
+                        <Skeleton width={68} height={32} />
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {upcoming.length === 0 && (
+                    <div className="text-muted">No upcoming meetings in the selected range.</div>
+                  )}
+                  {upcoming.map((m) => (
+                    <div key={m.id} style={styles.listItem}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>{m.title}</div>
+                        <div style={styles.listMeta}>
+                          {formatDateTime(m.start_time)} — {formatDateTime(m.end_time)}
+                          {m.location ? ` • ${m.location}` : ''}
+                        </div>
+                        {Array.isArray(m.tags) && m.tags.length > 0 && (
+                          <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {m.tags.map((t) => (
+                              <span
+                                key={t}
+                                style={{
+                                  padding: '2px 6px',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                  color: 'var(--text-secondary)',
+                                  background: 'var(--bg-primary)',
+                                }}
+                              >
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div style={styles.actionsRow}>
+                        <Button variant="secondary" onClick={() => onEdit(m)}>Edit</Button>
+                        <Button variant="secondary" onClick={() => onDelete(m)}>Delete</Button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         </div>

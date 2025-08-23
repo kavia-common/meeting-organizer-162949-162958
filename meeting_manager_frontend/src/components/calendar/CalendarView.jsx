@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listMeetings } from '../../services/meetingsService';
-import { Button, Modal, ToastContainer } from '../common';
+import { Button, Modal, ToastContainer, Skeleton } from '../common';
 
 /**
  * PUBLIC_INTERFACE
@@ -260,7 +260,12 @@ export default function CalendarView({
           <Button variant="secondary" onClick={goPrev} aria-label="Previous period">←</Button>
           <Button variant="secondary" onClick={goNext} aria-label="Next period">→</Button>
           <div style={styles.title} aria-live="polite">{title}</div>
-          {loading && <span style={styles.loading}>(Loading...)</span>}
+          {loading && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Skeleton width={80} height={14} />
+              <Skeleton width={50} height={14} />
+            </span>
+          )}
           {errorMsg && <span style={{ color: '#dc2626', fontSize: 12 }}> {errorMsg} </span>}
         </div>
         <div style={styles.toolbarGroup} role="tablist" aria-label="Calendar view">
@@ -330,24 +335,33 @@ export default function CalendarView({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {items.length === 0 && (
-                  <div className="text-muted" style={{ fontSize: 12 }}>No meetings</div>
+                {loading ? (
+                  <>
+                    <Skeleton width="85%" height={20} style={{ borderRadius: 'var(--radius-md)' }} />
+                    <Skeleton width="70%" height={18} style={{ borderRadius: 'var(--radius-md)' }} />
+                  </>
+                ) : (
+                  <>
+                    {items.length === 0 && (
+                      <div className="text-muted" style={{ fontSize: 12 }}>No meetings</div>
+                    )}
+                    {items.map((m) => (
+                      <div
+                        key={m.id}
+                        style={styles.meetingPill}
+                        onClick={() => handleMeetingClick(m)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleMeetingClick(m); }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Meeting ${m.title} at ${formatTime(m.start_time)}`}
+                      >
+                        <span style={styles.meetingDot} />
+                        <span style={{ fontWeight: 700 }}>{formatTime(m.start_time)}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{m.title}</span>
+                      </div>
+                    ))}
+                  </>
                 )}
-                {items.map((m) => (
-                  <div
-                    key={m.id}
-                    style={styles.meetingPill}
-                    onClick={() => handleMeetingClick(m)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleMeetingClick(m); }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Meeting ${m.title} at ${formatTime(m.start_time)}`}
-                  >
-                    <span style={styles.meetingDot} />
-                    <span style={{ fontWeight: 700 }}>{formatTime(m.start_time)}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{m.title}</span>
-                  </div>
-                ))}
               </div>
             </div>
           );
@@ -356,7 +370,11 @@ export default function CalendarView({
 
       <div style={styles.legend}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 10, background: 'var(--color-primary)' }} />
+          {loading ? (
+            <Skeleton width={12} height={12} circle />
+          ) : (
+            <span style={{ width: 10, height: 10, borderRadius: 10, background: 'var(--color-primary)' }} />
+          )}
           Meeting
         </span>
       </div>
