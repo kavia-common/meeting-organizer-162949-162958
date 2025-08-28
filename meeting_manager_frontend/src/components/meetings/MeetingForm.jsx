@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createMeeting, updateMeeting } from '../../services/meetingsService';
-import { Button, Input, ToastContainer } from '../common';
+import { Button, Input } from '../common';
+import { useToast } from '../ui';
 
 /**
  * PUBLIC_INTERFACE
@@ -68,7 +69,7 @@ export default function MeetingForm({
   const [form, setForm] = useState(defaults);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const toastRef = useRef(null);
+  const { toast } = useToast();
 
   // Keep form in sync if initialValues change
   useEffect(() => {
@@ -78,10 +79,10 @@ export default function MeetingForm({
 
   // Helpers for feedback
   const showError = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'error' });
+    toast({ title, description, variant: 'destructive' });
   };
   const showSuccess = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'success' });
+    toast({ title, description, variant: 'success' });
   };
 
   // Handle basic text changes
@@ -275,7 +276,6 @@ export default function MeetingForm({
 
   return (
     <section aria-label={isEdit ? 'Edit meeting' : 'Create meeting'}>
-      <ToastContainer ref={toastRef} />
       <form onSubmit={onSubmit} style={styles.form} noValidate>
         <Input
           label="Title"

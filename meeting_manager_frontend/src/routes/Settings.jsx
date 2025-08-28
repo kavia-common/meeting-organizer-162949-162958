@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import GoogleConnect from '../components/integrations/GoogleConnect';
-import { Button, ToastContainer } from '../components/common';
+import { Button } from '../components/common';
+import { useToast } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { getGoogleAccessToken, fetchGoogleEvents, toMeetingObjects } from '../services/googleIntegrationService';
 import { listMeetings, createMeeting } from '../services/meetingsService';
@@ -12,7 +13,7 @@ import { listMeetings, createMeeting } from '../services/meetingsService';
  */
 export default function Settings() {
   const { user } = useAuth();
-  const toastRef = useRef(null);
+  const { toast } = useToast();
   const [importing, setImporting] = useState(false);
 
   const styles = {
@@ -30,9 +31,9 @@ export default function Settings() {
     caption: { fontSize: 12, color: 'var(--muted)' },
   };
 
-  const showInfo = (title, description) => toastRef.current?.show({ title, description, type: 'info' });
-  const showSuccess = (title, description) => toastRef.current?.show({ title, description, type: 'success' });
-  const showError = (title, description) => toastRef.current?.show({ title, description, type: 'error' });
+  const showInfo = (title, description) => toast({ title, description });
+  const showSuccess = (title, description) => toast({ title, description, variant: 'success' });
+  const showError = (title, description) => toast({ title, description, variant: 'destructive' });
 
   // PUBLIC_INTERFACE
   async function importGoogleCalendar(rangeDays = 60) {
@@ -132,7 +133,6 @@ export default function Settings() {
 
   return (
     <section>
-      <ToastContainer ref={toastRef} />
       <div style={{ marginBottom: 12 }}>
         <h1 style={{ margin: 0 }}>Settings</h1>
         <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>

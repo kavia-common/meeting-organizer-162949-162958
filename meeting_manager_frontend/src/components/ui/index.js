@@ -14,3 +14,5 @@ export {
   DialogFooter,
   DialogContent,
 } from './dialog';
+
+export { ToastProvider, Toaster, useToast, withToastProvider } from './toast';

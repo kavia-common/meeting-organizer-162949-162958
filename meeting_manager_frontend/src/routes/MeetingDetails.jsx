@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getMeeting, deleteMeeting } from '../services/meetingsService';
 import MeetingForm from '../components/meetings/MeetingForm';
-import { Button, Modal, ToastContainer } from '../components/common';
+import { Button, Modal } from '../components/common';
+import { useToast } from '../components/ui';
 
 /**
  * PUBLIC_INTERFACE
@@ -14,7 +15,7 @@ import { Button, Modal, ToastContainer } from '../components/common';
 export default function MeetingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const toastRef = useRef(null);
+  const { toast } = useToast();
 
   const [meeting, setMeeting] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,10 +23,10 @@ export default function MeetingDetails() {
   const [editOpen, setEditOpen] = useState(false);
 
   const showError = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'error' });
+    toast({ title, description, variant: 'destructive' });
   };
   const showSuccess = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'success' });
+    toast({ title, description, variant: 'success' });
   };
 
   const load = useCallback(async () => {
@@ -116,7 +117,6 @@ export default function MeetingDetails() {
 
   return (
     <section aria-labelledby="meeting-details-title">
-      <ToastContainer ref={toastRef} />
       <div style={styles.card}>
         <div style={styles.headerRow}>
           <div>

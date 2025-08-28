@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button, Input, ToastContainer } from '../components/common';
+import { Button, Input } from '../components/common';
 import { useAuth } from '../context/AuthContext';
 import AuthForm from '../components/auth/AuthForm';
+import { useToast } from '../components/ui';
 
 /**
  * PUBLIC_INTERFACE
@@ -19,7 +20,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const toastRef = useRef(null);
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,11 +55,11 @@ export default function Login() {
   };
 
   const showError = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'error' });
+    toast({ title, description, variant: 'destructive' });
   };
 
   const showSuccess = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'success' });
+    toast({ title, description, variant: 'success' });
   };
 
   const onSubmit = async (e) => {
@@ -101,7 +102,6 @@ export default function Login() {
 
   return (
     <section aria-labelledby="login-title" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-      <ToastContainer ref={toastRef} />
       <AuthForm
         title="Sign in"
         subtitle="Access your meeting manager"

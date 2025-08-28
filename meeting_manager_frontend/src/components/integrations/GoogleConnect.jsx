@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Button, ToastContainer } from '../common';
+import { Button } from '../common';
+import { useToast } from '../ui';
 import supabase from '../../lib/supabaseClient';
 
 /**
@@ -31,17 +32,11 @@ import supabase from '../../lib/supabaseClient';
 export default function GoogleConnect() {
   const { session, user, loading, signInWithGoogle, signOut } = useAuth();
   const [working, setWorking] = useState(false);
-  const toastRef = useRef(null);
+  const { toast } = useToast();
 
-  const showInfo = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'info' });
-  };
-  const showSuccess = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'success' });
-  };
-  const showError = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'error' });
-  };
+  const showInfo = (title, description) => toast({ title, description });
+  const showSuccess = (title, description) => toast({ title, description, variant: 'success' });
+  const showError = (title, description) => toast({ title, description, variant: 'destructive' });
 
   // Determine if Google is connected by inspecting identities and session tokens
   const isGoogleConnected = useMemo(() => {
@@ -190,7 +185,6 @@ export default function GoogleConnect() {
 
   return (
     <section aria-label="Google account connection">
-      <ToastContainer ref={toastRef} />
       <div style={styles.card}>
         <div style={styles.header}>
           <div>

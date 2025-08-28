@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listMeetings } from '../../services/meetingsService';
-import { Button, Modal, ToastContainer, Skeleton } from '../common';
+import { Button, Modal, Skeleton } from '../common';
+import { useToast } from '../ui';
 
 /**
  * PUBLIC_INTERFACE
@@ -43,7 +44,7 @@ export default function CalendarView({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [selected, setSelected] = useState(null); // meeting selected for modal
-  const toastRef = useRef(null);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Derived visible range based on view and cursor
@@ -85,10 +86,10 @@ export default function CalendarView({
           // Fallback to mock
           const mock = generateMockMeetings(rangeStart, rangeEnd);
           setMeetings(mock);
-          toastRef.current?.show({
+          toast({
             title: 'Using sample data',
             description: 'Could not reach meetings service, showing mock meetings.',
-            type: 'warning',
+            variant: 'warning',
           });
         }
       } finally {
@@ -252,7 +253,6 @@ export default function CalendarView({
 
   return (
     <section aria-label="Calendar" style={styles.wrapper}>
-      <ToastContainer ref={toastRef} />
 
       <div style={styles.toolbar}>
         <div style={styles.toolbarGroup}>
@@ -436,7 +436,7 @@ export default function CalendarView({
               <Button
                 variant="secondary"
                 onClick={() => {
-                  toastRef.current?.show({ title: 'Edit not implemented', description: 'This is a UI placeholder.', type: 'info' });
+                  toast({ title: 'Edit not implemented', description: 'This is a UI placeholder.' });
                 }}
               >
                 Edit
@@ -444,7 +444,7 @@ export default function CalendarView({
               <Button
                 variant="secondary"
                 onClick={() => {
-                  toastRef.current?.show({ title: 'Delete not implemented', description: 'This is a UI placeholder.', type: 'warning' });
+                  toast({ title: 'Delete not implemented', description: 'This is a UI placeholder.', variant: 'warning' });
                 }}
               >
                 Delete

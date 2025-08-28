@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarView } from '../components/calendar';
-import { Button, Input, ToastContainer, Skeleton } from '../components/common';
+import { Button, Input, Skeleton } from '../components/common';
+import { useToast } from '../components/ui';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,7 @@ export default function Dashboard() {
   const [selectedForDetails, setSelectedForDetails] = useState(null);
   const [importing, setImporting] = useState(false);
 
-  const toastRef = useRef(null);
+  const { toast } = useToast();
 
   // Derived filters
   const computedTagsAny = useMemo(() => {
@@ -62,13 +63,13 @@ export default function Dashboard() {
   }, []);
 
   const showError = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'error' });
+    toast({ title, description, variant: 'destructive' });
   };
   const showSuccess = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'success' });
+    toast({ title, description, variant: 'success' });
   };
   const showInfo = (title, description) => {
-    toastRef.current?.show({ title, description, type: 'info' });
+    toast({ title, description });
   };
 
   // Load upcoming meetings list
@@ -353,7 +354,6 @@ export default function Dashboard() {
 
   return (
     <section>
-      <ToastContainer ref={toastRef} />
       <div style={styles.headerRow}>
         <h1 style={{ margin: 0 }}>Dashboard</h1>
         <div className="text-muted">Manage your calendar and upcoming meetings</div>
