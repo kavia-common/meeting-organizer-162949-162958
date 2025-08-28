@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listMeetings } from '../../services/meetingsService';
-import { Button, Modal, Skeleton } from '../common';
-import { useToast } from '../ui';
+import { Button, Modal } from '../common';
+import { useToast, Skeleton } from '../ui';
 
 /**
  * PUBLIC_INTERFACE

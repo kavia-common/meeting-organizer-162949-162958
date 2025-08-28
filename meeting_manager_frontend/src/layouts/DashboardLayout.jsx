@@ -1,6 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Button, Separator, Sheet, SheetContent, SheetTrigger, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Separator,
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  Avatar,
+} from '../components/ui';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * PUBLIC_INTERFACE
@@ -161,6 +179,19 @@ export default function DashboardLayout() {
     </div>
   );
 
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (!error) {
+      navigate('/login', { replace: true });
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('[DashboardLayout] signOut error:', error);
+    }
+  };
+
   return (
     <div style={styles.root}>
       {/* Desktop sidebar */}
@@ -194,12 +225,43 @@ export default function DashboardLayout() {
           <div style={{ fontWeight: 600 }}>Dashboard</div>
         </div>
         <div style={styles.topbarRight}>
-          <span style={styles.iconButton} aria-label="Theme toggle placeholder">
+          {/* Theme toggle placeholder can be replaced with actual theme wiring if needed */}
+          <span style={styles.iconButton} aria-label="Theme toggle">
             Theme
           </span>
-          <span style={styles.iconButton} aria-label="User menu placeholder">
-            User
-          </span>
+
+          {/* User Menu using Dropdown + Avatar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open user menu"
+                className="mm-btn mm-btn--ghost"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 9999, padding: 4 }}
+              >
+                <Avatar
+                  name={user?.email || user?.user_metadata?.full_name || 'User'}
+                  size={28}
+                />
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                  {user?.email || user?.user_metadata?.full_name || 'Account'}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => navigate('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  handleSignOut();
+                }}
+              >
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

@@ -17,3 +17,19 @@ export {
 
 export { ToastProvider, Toaster, useToast, withToastProvider } from './toast';
 export { Skeleton } from './skeleton';
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuCheckboxItem,
+} from './dropdown-menu';
+export { Avatar } from './avatar';
