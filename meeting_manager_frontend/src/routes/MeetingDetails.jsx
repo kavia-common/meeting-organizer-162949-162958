@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getMeeting, deleteMeeting } from '../services/meetingsService';
 import MeetingForm from '../components/meetings/MeetingForm';
 import { Button, Modal } from '../components/common';
-import { useToast } from '../components/ui';
+import { useToast, Skeleton } from '../components/ui';
 
 /**
  * PUBLIC_INTERFACE
@@ -138,7 +138,16 @@ export default function MeetingDetails() {
           </div>
         </div>
 
-        {loading && <div className="text-muted">Loading meeting...</div>}
+        {loading && (
+          <div style={{ display: 'grid', gap: 10 }}>
+            <Skeleton width="50%" height={22} />
+            <Skeleton width="30%" height={14} />
+            <div style={{ height: 1, background: 'var(--border-color)' }} />
+            <Skeleton width="80%" height={14} />
+            <Skeleton width="60%" height={14} />
+            <Skeleton width="40%" height={14} />
+          </div>
+        )}
         {!loading && errorMsg && (
           <div style={{ color: '#dc2626', fontSize: 14 }}>
             Error: {errorMsg}{' '}

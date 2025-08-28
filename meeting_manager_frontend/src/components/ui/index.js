@@ -16,3 +16,4 @@ export {
 } from './dialog';
 
 export { ToastProvider, Toaster, useToast, withToastProvider } from './toast';
+export { Skeleton } from './skeleton';
