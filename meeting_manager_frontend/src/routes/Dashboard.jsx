@@ -390,10 +390,10 @@ export default function Dashboard() {
               display: 'grid',
               // Make date fields equal and compact
               gridTemplateColumns: '1fr 1fr',
-              gap: 12,
+              gap: 16, // add a bit more space between From and To
               alignItems: 'end',
               width: '100%',
-              maxWidth: 280, // keep the pair compact
+              maxWidth: 300, // allow slightly wider pair to keep balance with added gap
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
@@ -412,7 +412,7 @@ export default function Dashboard() {
                   if (!isNaN(nd)) setDateRange((r) => ({ ...r, from: nd }));
                 }}
                 className="w-full"
-                style={{ maxWidth: 128 }}
+                style={{ maxWidth: 140 }}
               />
               <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
