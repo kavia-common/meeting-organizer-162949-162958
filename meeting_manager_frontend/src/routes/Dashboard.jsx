@@ -219,6 +219,7 @@ export default function Dashboard() {
       if (tokenErr || !accessToken) {
         throw new Error(tokenErr?.message || 'No Google access token. Connect Google in Settings.');
       }
+      console.log("------toekn", accessToken)
       const now = new Date();
       const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const timeMax = new Date(now.getTime() + rangeDays * 24 * 60 * 60 * 1000).toISOString();

@@ -61,12 +61,13 @@ export async function signInWithGoogleCalendarScope() {
       provider: 'google',
       options: {
         redirectTo,
-        // Some providers respect this field:
+        // Request full read-only calendar scopes; keep both for broader compatibility
         scopes: GOOGLE_CALENDAR_SCOPES,
         // Ensure user sees consent to add new scopes if previously granted fewer
         queryParams: {
           prompt: 'consent',
           access_type: 'offline',
+          // Some providers rely on the query string 'scope' explicitly
           scope: GOOGLE_CALENDAR_SCOPES,
         },
       },
@@ -375,12 +376,40 @@ export async function hasCalendarScope() {
     const allScopesStr =
       (Array.isArray(scopeCandidates) ? scopeCandidates.join(' ') : String(scopeCandidates || '')) || '';
 
-    const hasReadonly =
+    const hasReadonlyFromProfile =
       typeof allScopesStr === 'string' &&
       (allScopesStr.includes(GOOGLE_CALENDAR_SCOPE) ||
         allScopesStr.includes(GOOGLE_CALENDAR_EVENTS_READONLY_SCOPE));
 
-    return !!hasReadonly;
+    if (hasReadonlyFromProfile) return true;
+
+    // Fallback: if we have an access token, call Google's tokeninfo to verify scopes on token
+    const token =
+      session.provider_token ||
+      session.user?.user_metadata?.provider_token ||
+      session.user?.user_metadata?.access_token ||
+      (googleIdentity?.identity_data?.access_token ||
+        googleIdentity?.identity_data?.provider_token ||
+        googleIdentity?.identity_data?.oauth_access_token ||
+        googleIdentity?.identity_data?.token);
+
+    if (typeof token === 'string' && token) {
+      try {
+        const resp = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${encodeURIComponent(token)}`);
+        if (resp.ok) {
+          const info = await resp.json();
+          const scopeStr = String(info?.scope || '');
+          const hasTokenScopes =
+            scopeStr.includes(GOOGLE_CALENDAR_SCOPE) ||
+            scopeStr.includes(GOOGLE_CALENDAR_EVENTS_READONLY_SCOPE);
+          return !!hasTokenScopes;
+        }
+      } catch {
+        // ignore network errors and fall through
+      }
+    }
+
+    return false;
   } catch {
     return false;
   }

@@ -100,17 +100,14 @@ export default function GoogleConnect() {
         redirectTo:
           (typeof window !== 'undefined' && window.location?.origin) ||
           undefined,
-        // Request calendar scopes (readonly is required for listing events).
-        // Keep any other necessary scopes as needed.
+        // Explicit calendar read-only scopes needed by Calendar API
         scopes:
           'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly',
-        // Force re-consent to ensure new scopes are granted if previously connected without them.
-        // access_type=offline may be required to receive long-lived refresh tokens; harmless for our read-only use.
+        // Force re-consent, request offline for refresh token, and include scope in query for providers that honor it
         queryParams: {
           prompt: 'consent',
           access_type: 'offline',
-          // Explicitly include scope in query to ensure providers that use queryParams respect it.
-          // Some environments rely on 'scopes' top-level option; including here for robustness.
+          include_granted_scopes: 'true',
           scope:
             'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly',
         },

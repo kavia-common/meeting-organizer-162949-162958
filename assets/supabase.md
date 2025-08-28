@@ -1,6 +1,6 @@
 # Supabase Configuration and Schema for Meeting Manager
 
-This document tracks the Supabase setup for this project and provides the SQL required to ensure the `public.meetings` table exists, Row Level Security (RLS) is correctly configured, and that the schema cache is synchronized.
+This document tracks the Supabase setup for this project, provides the SQL and configuration guidance for the database, and documents Google OAuth requirements for Calendar integration.
 
 IMPORTANT: Current blocker
 - The API currently returns PGRST202: "Could not find the function public.run_sql(query) in the schema cache".
@@ -13,13 +13,31 @@ Required in the frontend environment:
 - REACT_APP_SUPABASE_URL
 - REACT_APP_SUPABASE_KEY
 
-Optional (OAuth):
+OAuth (Google) related:
 - REACT_APP_GOOGLE_CLIENT_ID
 - REACT_APP_GOOGLE_CLIENT_SECRET
 
 Make sure these are set in your environment or in a `.env` file (not committed).
 
-## 2) Install `public.run_sql` RPC (for tools and admin operations)
+## 2) Google OAuth and Calendar scopes
+
+To enable Google Calendar read operations, the frontend requests the proper scopes during the OAuth flow. The application will include the following scopes for Google sign-in:
+
+- https://www.googleapis.com/auth/calendar.readonly
+- https://www.googleapis.com/auth/calendar.events.readonly
+
+And sets the following query parameters for robust provider compatibility:
+- prompt=consent
+- access_type=offline
+- include_granted_scopes=true
+- scope=<both scopes string> (as query param for providers that honor query string scope)
+
+Notes:
+- Ensure the Google OAuth credentials in Supabase match REACT_APP_GOOGLE_CLIENT_ID and REACT_APP_GOOGLE_CLIENT_SECRET.
+- After changing scopes, users who previously connected might need to reconnect. The app triggers a re-consent flow automatically when needed from the Settings -> Google integration (GoogleConnect component).
+- If you still see 403 insufficientPermissions from the Calendar API, disconnect in Settings and reconnect to re-grant scopes.
+
+## 3) Install `public.run_sql` RPC (for tools and admin operations)
 
 Run this in Supabase SQL Editor:
 
@@ -52,7 +70,7 @@ $$;
 
 Note: It’s recommended to restrict access to `public.run_sql` to only the `service_role` (server-side) if used beyond tooling.
 
-## 3) Create/Sync the `public.meetings` table
+## 4) Create/Sync the `public.meetings` table
 
 We’ll create a robust table that matches the frontend expectations in `src/services/meetingsService.js`.
 
@@ -105,7 +123,7 @@ create index if not exists idx_meetings_status on public.meetings(status);
 create index if not exists idx_meetings_tags_gin on public.meetings using gin (tags);
 create index if not exists idx_meetings_attendees_gin on public.meetings using gin (attendees);
 
-## 4) Row Level Security and Policies
+## 5) Row Level Security and Policies
 
 Enable RLS and define owner-based access (user owns their rows via `user_id` = `auth.uid()`).
 
@@ -147,14 +165,14 @@ for delete
 to authenticated
 using (user_id = auth.uid());
 
-## 5) Realtime
+## 6) Realtime
 
 If you want realtime changes for this table:
 
 -- Enable Realtime for the public schema (if not already enabled in Supabase Dashboard):
 -- In Supabase Dashboard: Database -> Replication -> Configure -> Add table public.meetings
 
-## 6) Refresh Schema Cache
+## 7) Refresh Schema Cache
 
 After schema changes, refresh PostgREST cache:
 
@@ -163,7 +181,7 @@ After schema changes, refresh PostgREST cache:
 
 If still seeing cache errors, wait 30-60 seconds and try again.
 
-## 7) Authentication Redirects
+## 8) Authentication Redirects
 
 Set Site URL and Redirect URLs in Supabase Dashboard:
 - Site URL: your production domain (or local dev tunnel)
@@ -171,7 +189,7 @@ Set Site URL and Redirect URLs in Supabase Dashboard:
   - http://localhost:3000/**
   - https://<your-production-domain>/**
 
-## 8) Validation Checklist
+## 9) Validation Checklist
 
 - [ ] RPC `public.run_sql(json)` exists and is restricted appropriately
 - [ ] Table `public.meetings` exists
@@ -179,11 +197,12 @@ Set Site URL and Redirect URLs in Supabase Dashboard:
 - [ ] Realtime enabled (optional, but recommended)
 - [ ] API cache reloaded
 - [ ] Frontend env vars set
+- [ ] Google OAuth client configured with the two read-only Calendar scopes
 
-## 9) Troubleshooting
+## 10) Troubleshooting
 
 - Error: PGRST202 run_sql missing
-  - Create the RPC using section (2), then reload API.
+  - Create the RPC using section (3), then reload API.
 
 - Error: cannot insert due to RLS
   - Ensure you are signed in and `user_id` equals `auth.uid()` in insert payload.
@@ -194,7 +213,12 @@ Set Site URL and Redirect URLs in Supabase Dashboard:
 - Error: Missing env variables
   - Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY.
 
-## 10) Schema used by frontend
+- Error: 403 insufficientPermissions (ACCESS_TOKEN_SCOPE_INSUFFICIENT) when fetching Google Calendar
+  - Disconnect Google from Settings and reconnect to trigger re-consent with the required scopes.
+  - Ensure Google Cloud Console OAuth consent screen has Calendar API enabled and your OAuth client is the one configured in Supabase.
+  - Verify that the token includes scopes using https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=...
+
+## 11) Schema used by frontend
 
 The frontend expects the following columns to exist on `public.meetings`:
 - id (uuid, PK)
