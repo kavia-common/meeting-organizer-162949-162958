@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarView } from '../components/calendar';
-import { Button, Input, Modal, ToastContainer, Skeleton } from '../components/common';
+import { Button, Input, ToastContainer, Skeleton } from '../components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '../components/ui';
 import MeetingForm from '../components/meetings/MeetingForm';
 import { listMeetings, deleteMeeting, createMeeting, subscribeToMeetings, updateMeeting } from '../services/meetingsService';
 import { useAuth } from '../context/AuthContext';
@@ -536,138 +545,156 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Add / Edit Modal */}
-      <Modal
-        open={quickAddOpen}
-        onClose={() => {
+      {/* Quick Add / Edit Dialog */}
+      <Dialog open={quickAddOpen} onOpenChange={(o) => {
+        if (!o) {
           setQuickAddOpen(false);
           setSelectedForEdit(null);
-        }}
-        title={selectedForEdit ? 'Edit meeting' : 'Quick add meeting'}
-        footer={null}
-      >
-        <MeetingForm
-          mode={selectedForEdit ? 'edit' : 'create'}
-          initialValues={selectedForEdit || {}}
-          userId={user?.id}
-          onSuccess={handleFormSuccess}
-          onCancel={() => {
-            setQuickAddOpen(false);
-            setSelectedForEdit(null);
-          }}
-          // Optimistic hooks to update Dashboard list immediately
-          onOptimisticCreate={(temp) => {
-            if (!temp) return;
-            setUpcoming((prev) => {
-              // Avoid dupes on temp ids
-              if (prev.some((m) => m.id === temp.id)) return prev;
-              return [temp, ...prev].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-            });
-            refreshCalendar();
-          }}
-          onOptimisticEdit={(temp) => {
-            if (!temp?.id) return;
-            setUpcoming((prev) => prev.map((m) => (m.id === temp.id ? { ...m, ...temp } : m)));
-            refreshCalendar();
-          }}
-          onOptimisticRevert={(prevItem, mode) => {
-            // Revert changes on failure
-            if (mode === 'create' && prevItem) {
-              setUpcoming((prev) => prev.filter((m) => m.id !== prevItem.id));
-            } else if (mode === 'edit' && prevItem) {
-              setUpcoming((prev) => prev.map((m) => (m.id === prevItem.id ? prevItem : m)));
-            }
-            refreshCalendar();
-          }}
-        />
-      </Modal>
+        }
+      }}>
+        <DialogContent>
+          <div>
+            <DialogHeader>
+              <DialogTitle>{selectedForEdit ? 'Edit meeting' : 'Quick add meeting'}</DialogTitle>
+              <DialogDescription />
+            </DialogHeader>
+            <div className="mm-dialog__body">
+              <MeetingForm
+                mode={selectedForEdit ? 'edit' : 'create'}
+                initialValues={selectedForEdit || {}}
+                userId={user?.id}
+                onSuccess={handleFormSuccess}
+                onCancel={() => {
+                  setQuickAddOpen(false);
+                  setSelectedForEdit(null);
+                }}
+                // Optimistic hooks to update Dashboard list immediately
+                onOptimisticCreate={(temp) => {
+                  if (!temp) return;
+                  setUpcoming((prev) => {
+                    // Avoid dupes on temp ids
+                    if (prev.some((m) => m.id === temp.id)) return prev;
+                    return [temp, ...prev].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+                  });
+                  refreshCalendar();
+                }}
+                onOptimisticEdit={(temp) => {
+                  if (!temp?.id) return;
+                  setUpcoming((prev) => prev.map((m) => (m.id === temp.id ? { ...m, ...temp } : m)));
+                  refreshCalendar();
+                }}
+                onOptimisticRevert={(prevItem, mode) => {
+                  // Revert changes on failure
+                  if (mode === 'create' && prevItem) {
+                    setUpcoming((prev) => prev.filter((m) => m.id !== prevItem.id));
+                  } else if (mode === 'edit' && prevItem) {
+                    setUpcoming((prev) => prev.map((m) => (m.id === prevItem.id ? prevItem : m)));
+                  }
+                  refreshCalendar();
+                }}
+              />
+            </div>
+            <DialogFooter />
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Details Modal for calendar click with inline actions */}
-      <Modal
-        open={detailsOpen}
-        onClose={() => {
+      {/* Details Dialog for calendar click with inline actions */}
+      <Dialog open={detailsOpen} onOpenChange={(o) => {
+        if (!o) {
           setDetailsOpen(false);
           setSelectedForDetails(null);
-        }}
-        title={selectedForDetails?.title || 'Meeting'}
-        footer={
-          selectedForDetails && (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  // open edit using same modal as quick add
-                  setDetailsOpen(false);
-                  setSelectedForEdit(selectedForDetails);
-                  setQuickAddOpen(true);
-                }}
-              >
-                Edit
-              </Button>
-              <Button variant="secondary" onClick={() => onDelete(selectedForDetails)}>
-                Delete
-              </Button>
-              <Button
-                onClick={() => {
-                  setDetailsOpen(false);
-                  setSelectedForDetails(null);
-                }}
-              >
-                Close
-              </Button>
-            </>
-          )
         }
-      >
-        {selectedForDetails ? (
-          <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
-            <div>
-              <strong>When: </strong>
-              {formatDateTime(selectedForDetails.start_time)} — {formatDateTime(selectedForDetails.end_time)}
-            </div>
-            {selectedForDetails.location && (
-              <div>
-                <strong>Location: </strong>
-                {selectedForDetails.location}
-              </div>
-            )}
-            {selectedForDetails.description && (
-              <div>
-                <strong>Description: </strong>
-                <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
-                  {selectedForDetails.description}
+      }}>
+        <DialogContent>
+          <div>
+            <DialogHeader>
+              <DialogTitle>{selectedForDetails?.title || 'Meeting'}</DialogTitle>
+              <DialogDescription />
+            </DialogHeader>
+            <div className="mm-dialog__body">
+              {selectedForDetails ? (
+                <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
+                  <div>
+                    <strong>When: </strong>
+                    {formatDateTime(selectedForDetails.start_time)} — {formatDateTime(selectedForDetails.end_time)}
+                  </div>
+                  {selectedForDetails.location && (
+                    <div>
+                      <strong>Location: </strong>
+                      {selectedForDetails.location}
+                    </div>
+                  )}
+                  {selectedForDetails.description && (
+                    <div>
+                      <strong>Description: </strong>
+                      <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+                        {selectedForDetails.description}
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(selectedForDetails.attendees) && selectedForDetails.attendees.length > 0 && (
+                    <div>
+                      <strong>Attendees: </strong>
+                      {selectedForDetails.attendees.join(', ')}
+                    </div>
+                  )}
+                  {Array.isArray(selectedForDetails.tags) && selectedForDetails.tags.length > 0 && (
+                    <div>
+                      <strong>Tags: </strong>
+                      {selectedForDetails.tags.map((t) => (
+                        <span
+                          key={t}
+                          style={{
+                            marginRight: 6,
+                            padding: '2px 6px',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 6,
+                          }}
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            {Array.isArray(selectedForDetails.attendees) && selectedForDetails.attendees.length > 0 && (
-              <div>
-                <strong>Attendees: </strong>
-                {selectedForDetails.attendees.join(', ')}
-              </div>
-            )}
-            {Array.isArray(selectedForDetails.tags) && selectedForDetails.tags.length > 0 && (
-              <div>
-                <strong>Tags: </strong>
-                {selectedForDetails.tags.map((t) => (
-                  <span
-                    key={t}
-                    style={{
-                      marginRight: 6,
-                      padding: '2px 6px',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 6,
+              ) : (
+                <div className="text-muted">No meeting selected.</div>
+              )}
+            </div>
+            <DialogFooter>
+              {selectedForDetails && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      // open edit using same modal as quick add
+                      setDetailsOpen(false);
+                      setSelectedForEdit(selectedForDetails);
+                      setQuickAddOpen(true);
                     }}
                   >
-                    #{t}
-                  </span>
-                ))}
-              </div>
-            )}
+                    Edit
+                  </Button>
+                  <Button variant="secondary" onClick={() => onDelete(selectedForDetails)}>
+                    Delete
+                  </Button>
+                  <DialogClose asChild>
+                    <Button
+                      onClick={() => {
+                        setDetailsOpen(false);
+                        setSelectedForDetails(null);
+                      }}
+                    >
+                      Close
+                    </Button>
+                  </DialogClose>
+                </>
+              )}
+            </DialogFooter>
           </div>
-        ) : (
-          <div className="text-muted">No meeting selected.</div>
-        )}
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
