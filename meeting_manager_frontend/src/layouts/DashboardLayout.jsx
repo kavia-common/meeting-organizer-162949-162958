@@ -1,32 +1,42 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { Button, Separator, Sheet, SheetContent, SheetTrigger, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui';
 
 /**
  * PUBLIC_INTERFACE
- * DashboardLayout provides the main application layout with:
- * - Sidebar navigation to Calendar, Meetings, Search, and Settings
- * - Topbar area with placeholders for "User menu" and "Theme toggle"
- * - Main content area that renders nested route content via React Router's Outlet
+ * DashboardLayout refactored to use Shadcn-like primitives.
+ * - Collapsible sidebar (desktop) with Tooltip labels when collapsed.
+ * - Mobile drawer using Sheet.
+ * - Navigation limited to Calendar, Meetings, Settings (Search removed).
  *
  * Usage:
- *   Wrap dashboard-related routes with this layout in your router configuration:
- *     <Route element={<DashboardLayout />}>
- *       <Route path="/dashboard" element={<Dashboard />} />
- *       <Route path="/meetings" element={<Meetings />} />
- *       <Route path="/search" element={<Search />} />
- *       <Route path="/settings" element={<Settings />} />
- *     </Route>
- *
- * Styling:
- *   Uses CSS variables defined in App.css for theme-ready colors.
- *   Inline styles are provided for simplicity and template consistency.
+ *   <Route element={<DashboardLayout />}>
+ *     <Route path="/dashboard" element={<Dashboard />} />
+ *     <Route path="/meetings" element={<Meetings />} />
+ *     <Route path="/settings" element={<Settings />} />
+ *   </Route>
  */
 export default function DashboardLayout() {
-  // Inline styles to keep this template self-contained and consistent with App.css variables
+  // Sidebar collapsed state (desktop)
+  const [collapsed, setCollapsed] = useState(false);
+  // Mobile sheet open state
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Icons are simple unicode/emoji placeholders; can be swapped with lucide icons later.
+  const navItems = useMemo(
+    () => [
+      { to: '/dashboard', label: 'Calendar', icon: '📅' },
+      { to: '/meetings', label: 'Meetings', icon: '📓' },
+      { to: '/settings', label: 'Settings', icon: '⚙️' },
+    ],
+    []
+  );
+
+  // Layout styles using CSS variables present in the project
   const styles = {
-    layout: {
+    root: {
       display: 'grid',
-      gridTemplateColumns: '240px 1fr',
+      gridTemplateColumns: collapsed ? '72px 1fr' : '240px 1fr',
       gridTemplateRows: '56px 1fr',
       gridTemplateAreas: `
         "sidebar topbar"
@@ -35,28 +45,34 @@ export default function DashboardLayout() {
       minHeight: '100vh',
       background: 'var(--bg-primary)',
       color: 'var(--text-primary)',
-      transition: 'background-color 0.3s ease, color 0.3s ease',
+      transition: 'grid-template-columns 0.2s ease, background-color 0.3s ease, color 0.3s ease',
     },
     sidebar: {
       gridArea: 'sidebar',
       borderRight: '1px solid var(--border-color)',
       background: 'var(--bg-secondary)',
-      padding: '16px 12px',
+      padding: collapsed ? '12px 8px' : '16px 12px',
       display: 'flex',
       flexDirection: 'column',
       gap: 8,
+      alignItems: collapsed ? 'center' : 'stretch',
     },
     brand: {
       fontSize: 18,
       fontWeight: 700,
-      marginBottom: 12,
+      marginBottom: 8,
+      width: '100%',
+      textAlign: collapsed ? 'center' : 'left',
     },
     nav: {
       display: 'flex',
       flexDirection: 'column',
       gap: 6,
     },
-    navLink: {
+    navLinkBase: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
       padding: '10px 12px',
       borderRadius: 8,
       color: 'var(--text-primary)',
@@ -65,6 +81,7 @@ export default function DashboardLayout() {
       transition: 'all 0.2s ease',
       fontSize: 14,
       fontWeight: 500,
+      justifyContent: collapsed ? 'center' : 'flex-start',
     },
     navLinkActive: {
       background: 'var(--bg-primary)',
@@ -77,14 +94,17 @@ export default function DashboardLayout() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 16px',
+      padding: '0 12px',
+      gap: 8,
     },
-    topbarRight: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
+    topbarLeft: { display: 'flex', alignItems: 'center', gap: 8 },
+    topbarRight: { display: 'flex', alignItems: 'center', gap: 8 },
+    iconButton: {
+      padding: '6px 8px',
+      border: '1px solid var(--border-color)',
+      borderRadius: 8,
+      background: 'var(--bg-primary)',
       fontSize: 14,
-      color: 'var(--text-primary)',
     },
     main: {
       gridArea: 'main',
@@ -92,60 +112,98 @@ export default function DashboardLayout() {
       width: '100%',
       boxSizing: 'border-box',
     },
-    pill: {
-      padding: '6px 10px',
-      border: '1px solid var(--border-color)',
-      borderRadius: 8,
-      background: 'var(--bg-primary)',
+    // Mobile-only helpers (not using CSS media queries here; controlled via visibility buttons)
+    sheetContent: {
+      width: 260,
+      maxWidth: '85vw',
+      background: 'var(--bg-secondary)',
+      borderRight: '1px solid var(--border-color)',
+      padding: 12,
     },
-    mobileNote: {
-      marginTop: 8,
-      fontSize: 12,
-      opacity: 0.7,
-    }
+    collapsedLabel: {
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: collapsed ? 'none' : 'inline',
+    },
+    icon: { width: 20, textAlign: 'center' },
   };
 
-  // Helper to compose active styles for NavLink
-  const linkClass = ({ isActive }) => ({
-    ...styles.navLink,
+  const linkStyle = ({ isActive }) => ({
+    ...styles.navLinkBase,
     ...(isActive ? styles.navLinkActive : {}),
   });
 
+  const SidebarContent = ({ isCollapsed }) => (
+    <div>
+      <div style={styles.brand}>{isCollapsed ? 'M' : 'Meetings'}</div>
+      <Separator />
+      <nav style={{ ...styles.nav, marginTop: 8 }}>
+        <TooltipProvider>
+          {navItems.map((item) => {
+            const link = (
+              <NavLink key={item.to} to={item.to} style={linkStyle} end>
+                <span aria-hidden="true" style={styles.icon}>{item.icon}</span>
+                <span style={styles.collapsedLabel}>{item.label}</span>
+              </NavLink>
+            );
+            return isCollapsed ? (
+              <Tooltip key={item.to}>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
+            ) : (
+              link
+            );
+          })}
+        </TooltipProvider>
+      </nav>
+    </div>
+  );
+
   return (
-    <div style={styles.layout}>
+    <div style={styles.root}>
+      {/* Desktop sidebar */}
       <aside style={styles.sidebar} aria-label="Sidebar navigation">
-        <div style={styles.brand}>Meetings</div>
-        <nav style={styles.nav}>
-          <NavLink to="/dashboard" style={linkClass} end>
-            📅 Calendar
-          </NavLink>
-          <NavLink to="/meetings" style={linkClass} end>
-            📓 Meetings
-          </NavLink>
-          <NavLink to="/search" style={linkClass} end>
-            🔎 Search
-          </NavLink>
-          <NavLink to="/settings" style={linkClass} end>
-            ⚙️ Settings
-          </NavLink>
-        </nav>
-        <div style={styles.mobileNote}>
-          Tip: Use the theme toggle in the top bar to switch light/dark mode.
-        </div>
+        <SidebarContent isCollapsed={collapsed} />
       </aside>
 
+      {/* Topbar */}
       <header style={styles.topbar} aria-label="Top bar">
-        <div style={{ fontWeight: 600 }}>Dashboard</div>
+        <div style={styles.topbarLeft}>
+          {/* Mobile: open sheet */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <button type="button" style={styles.iconButton} aria-label="Open menu (mobile)">
+                ☰
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="mm-sheet-inline" style={styles.sheetContent}>
+              <SidebarContent isCollapsed={false} />
+            </SheetContent>
+          </Sheet>
+          {/* Desktop: collapse/expand */}
+          <button
+            type="button"
+            style={styles.iconButton}
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? '➡️' : '⬅️'}
+          </button>
+          <div style={{ fontWeight: 600 }}>Dashboard</div>
+        </div>
         <div style={styles.topbarRight}>
-          <span style={styles.pill} aria-label="Theme toggle placeholder">
-            Theme toggle
+          <span style={styles.iconButton} aria-label="Theme toggle placeholder">
+            Theme
           </span>
-          <span style={styles.pill} aria-label="User menu placeholder">
-            User menu
+          <span style={styles.iconButton} aria-label="User menu placeholder">
+            User
           </span>
         </div>
       </header>
 
+      {/* Main content */}
       <main style={styles.main} role="main">
         <Outlet />
       </main>
