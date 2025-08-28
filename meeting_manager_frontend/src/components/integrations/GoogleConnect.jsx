@@ -28,6 +28,13 @@ import supabase from '../../lib/supabaseClient';
  * Environment variables required:
  * - REACT_APP_SUPABASE_URL
  * - REACT_APP_SUPABASE_KEY
+ *
+ * OAuth scopes:
+ * - This component requests Google Calendar read scopes:
+ *   https://www.googleapis.com/auth/calendar.readonly (required)
+ *   https://www.googleapis.com/auth/calendar.events.readonly (kept for compatibility)
+ * - Tokens issued with these scopes can be used by googleIntegrationService.fetchGoogleEvents
+ *   to make Calendar API calls (v3).
  */
 export default function GoogleConnect() {
   const { session, user, loading, signInWithGoogle, signOut } = useAuth();
@@ -93,8 +100,8 @@ export default function GoogleConnect() {
         redirectTo:
           (typeof window !== 'undefined' && window.location?.origin) ||
           undefined,
-        // Request calendar scopes if planning to integrate with Google Calendar
-        // You can adjust scopes later to least privilege
+        // Request calendar scopes (readonly is required for listing events).
+        // Keep any other necessary scopes as needed.
         scopes:
           'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly',
         // Force re-consent to ensure new scopes are granted if previously connected without them.
@@ -102,6 +109,10 @@ export default function GoogleConnect() {
         queryParams: {
           prompt: 'consent',
           access_type: 'offline',
+          // Explicitly include scope in query to ensure providers that use queryParams respect it.
+          // Some environments rely on 'scopes' top-level option; including here for robustness.
+          scope:
+            'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly',
         },
       });
       if (error) {
