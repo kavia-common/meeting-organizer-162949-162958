@@ -1,5 +1,10 @@
 import supabase from '../lib/supabaseClient';
 
+// Commonly used Google Calendar scopes for read-only access
+export const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+export const GOOGLE_CALENDAR_EVENTS_READONLY_SCOPE = 'https://www.googleapis.com/auth/calendar.events.readonly';
+export const GOOGLE_CALENDAR_SCOPES = `${GOOGLE_CALENDAR_SCOPE} ${GOOGLE_CALENDAR_EVENTS_READONLY_SCOPE}`;
+
 /**
  * PUBLIC_INTERFACE
  * GoogleIntegrationService
@@ -38,6 +43,40 @@ import supabase from '../lib/supabaseClient';
  * - session.user.identities[n].identity_data?.access_token
  * - session.provider_refresh_token (not used directly here)
  */
+/**
+ * PUBLIC_INTERFACE
+ * signInWithGoogleCalendarScope
+ * Initiates Google OAuth via Supabase requesting read-only Calendar scopes.
+ * Forces consent so that users previously connected without calendar scopes can re-grant the proper permissions.
+ *
+ * Returns: Promise<{ data?: any, error?: Error }>
+ */
+export async function signInWithGoogleCalendarScope() {
+  try {
+    const redirectTo =
+      (typeof window !== 'undefined' && window.location?.origin) || undefined;
+
+    // supabase-js v2 supports additional options for scopes via queryParams.scope or top-level scopes
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        // Some providers respect this field:
+        scopes: GOOGLE_CALENDAR_SCOPES,
+        // Ensure user sees consent to add new scopes if previously granted fewer
+        queryParams: {
+          prompt: 'consent',
+          access_type: 'offline',
+          scope: GOOGLE_CALENDAR_SCOPES,
+        },
+      },
+    });
+
+    return { data, error: error || null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
 export async function getGoogleAccessToken() {
   /**
    * Attempts to read a Google OAuth access token from the current Supabase session.
@@ -111,7 +150,8 @@ export async function getGoogleAccessToken() {
  *
  * Notes:
  * - Uses Google Calendar v3: GET /calendar/v3/calendars/{calendarId}/events
- * - Requires appropriate scopes on the access token.
+ * - Requires appropriate scopes on the access token:
+ *   At minimum: https://www.googleapis.com/auth/calendar.readonly
  */
 export async function fetchGoogleEvents({
   accessToken,
@@ -287,6 +327,30 @@ function isValidISO(v) {
 
 /**
  * PUBLIC_INTERFACE
+ * ensureCalendarScopeOrReconnect
+ * Checks if the current session likely has the required Calendar read scope.
+ * If not, initiates Google OAuth with the proper scopes to request consent.
+ *
+ * Returns: Promise<{ ensured: boolean, error: Error | null }>
+ */
+export async function ensureCalendarScopeOrReconnect() {
+  try {
+    const hasScope = await hasCalendarScope();
+    if (hasScope) return { ensured: true, error: null };
+
+    const { error } = await signInWithGoogleCalendarScope();
+    if (error) {
+      return { ensured: false, error };
+    }
+    // Redirect will occur; return ensured=false to indicate flow continuation will happen after login
+    return { ensured: false, error: null };
+  } catch (error) {
+    return { ensured: false, error };
+  }
+}
+
+/**
+ * PUBLIC_INTERFACE
  * hasCalendarScope
  * Best-effort detection of whether the current session has Google Calendar read scopes.
  * Since the exact storage of scopes is not guaranteed on the client, this is heuristic.
@@ -297,20 +361,26 @@ export async function hasCalendarScope() {
     const session = data?.session || null;
     if (!session) return false;
 
-    // Some setups include granted scopes in user_metadata or app_metadata
-    const scopeSources = [
+    // Gather possible scope strings from various locations
+    const identities = Array.isArray(session.user?.identities) ? session.user.identities : [];
+    const googleIdentity = identities.find((i) => i?.provider === 'google');
+
+    const scopeCandidates = [
       session.user?.user_metadata?.scopes,
       session.user?.app_metadata?.scopes,
-      session.user?.identities?.find?.((i) => i?.provider === 'google')?.identity_data?.scopes,
+      googleIdentity?.identity_data?.scopes,
+      googleIdentity?.identityData?.scopes,
     ].filter(Boolean);
 
-    const allScopes = (scopeSources.join?.(' ') || (Array.isArray(scopeSources) ? scopeSources.join(' ') : '')).toString();
+    const allScopesStr =
+      (Array.isArray(scopeCandidates) ? scopeCandidates.join(' ') : String(scopeCandidates || '')) || '';
 
-    return (
-      typeof allScopes === 'string' &&
-      (allScopes.includes('https://www.googleapis.com/auth/calendar.readonly') ||
-        allScopes.includes('https://www.googleapis.com/auth/calendar.events.readonly'))
-    );
+    const hasReadonly =
+      typeof allScopesStr === 'string' &&
+      (allScopesStr.includes(GOOGLE_CALENDAR_SCOPE) ||
+        allScopesStr.includes(GOOGLE_CALENDAR_EVENTS_READONLY_SCOPE));
+
+    return !!hasReadonly;
   } catch {
     return false;
   }
