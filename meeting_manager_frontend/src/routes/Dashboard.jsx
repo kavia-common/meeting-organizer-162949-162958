@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarView } from '../components/calendar';
 import { Button, Input } from '../components/common';
-import { useToast, Skeleton } from '../components/ui';
+import { useToast, Skeleton, Input as UiInput } from '../components/ui';
 import {
   Dialog,
   DialogContent,
@@ -289,8 +289,9 @@ export default function Dashboard() {
     filters: {
       display: 'grid',
       gridTemplateColumns: '1.2fr 1fr auto',
-      gap: 10,
+      gap: 12,
       width: '100%',
+      alignItems: 'end',
     },
     twoCol: {
       display: 'grid',
@@ -378,48 +379,52 @@ export default function Dashboard() {
             onChange={(e) => setTagFilter(e.target.value)}
             helperText="Comma separated"
           />
-          <div style={{ display: 'grid', gap: 6, alignItems: 'end', gridTemplateColumns: '1fr 1fr' }}>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 10,
+              alignItems: 'end',
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label
+                htmlFor="date-from"
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}
+              >
                 From
               </label>
-              <input
+              <UiInput
+                id="date-from"
                 type="date"
                 value={dateInputValue(dateRange.from)}
                 onChange={(e) => {
                   const nd = new Date(e.target.value);
                   if (!isNaN(nd)) setDateRange((r) => ({ ...r, from: nd }));
                 }}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)',
-                }}
+                className="w-full"
               />
+              <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label
+                htmlFor="date-to"
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}
+              >
                 To
               </label>
-              <input
+              <UiInput
+                id="date-to"
                 type="date"
                 value={dateInputValue(dateRange.to)}
                 onChange={(e) => {
                   const nd = new Date(e.target.value);
                   if (!isNaN(nd)) setDateRange((r) => ({ ...r, to: nd }));
                 }}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)',
-                }}
+                className="w-full"
               />
+              <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
           </div>
         </div>
