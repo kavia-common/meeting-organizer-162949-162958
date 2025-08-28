@@ -287,9 +287,10 @@ export default function Dashboard() {
       marginBottom: 12,
     },
     filters: {
-      // Three columns: Search (fixed-ish), Tags (fixed-ish), Date range (flexes larger)
+      // Three columns: Search (fixed-ish), Tags (fixed-ish), Date range (compact)
       display: 'grid',
-      gridTemplateColumns: 'minmax(220px, 280px) minmax(180px, 240px) 1fr',
+      // Make the date range section narrower to match compact fields
+      gridTemplateColumns: 'minmax(220px, 280px) minmax(180px, 240px) minmax(220px, 280px)',
       gap: 12,
       width: '100%',
       alignItems: 'end',
@@ -387,11 +388,12 @@ export default function Dashboard() {
           <div
             style={{
               display: 'grid',
-              // Give date fields ample and equal space
+              // Make date fields equal and compact
               gridTemplateColumns: '1fr 1fr',
               gap: 12,
               alignItems: 'end',
               width: '100%',
+              maxWidth: 280, // keep the pair compact
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
@@ -410,6 +412,7 @@ export default function Dashboard() {
                   if (!isNaN(nd)) setDateRange((r) => ({ ...r, from: nd }));
                 }}
                 className="w-full"
+                style={{ maxWidth: 128 }}
               />
               <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
@@ -429,6 +432,7 @@ export default function Dashboard() {
                   if (!isNaN(nd)) setDateRange((r) => ({ ...r, to: nd }));
                 }}
                 className="w-full"
+                style={{ maxWidth: 128 }}
               />
               <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
