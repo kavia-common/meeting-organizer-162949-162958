@@ -1,4 +1,4 @@
-import supabase from '../lib/supabaseClient';
+import supabase from '../common/supabaseClient';
 
 // Commonly used Google Calendar scopes for read-only access
 export const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';

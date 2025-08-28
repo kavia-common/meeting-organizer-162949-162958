@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../common';
 import { useToast } from '../ui';
-import supabase from '../../lib/supabaseClient';
+import supabase from '../../common/supabaseClient';
 
 /**
  * PUBLIC_INTERFACE
