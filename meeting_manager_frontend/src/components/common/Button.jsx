@@ -24,11 +24,12 @@ export default function Button({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    borderRadius: 'var(--radius-md)',
+    borderRadius: '12px',
     border: '1px solid transparent',
     cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'all 0.2s ease',
-    fontWeight: 600,
+    transition: 'transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease',
+    fontWeight: 700,
+    letterSpacing: 0.1,
     textDecoration: 'none',
     userSelect: 'none',
     whiteSpace: 'nowrap',
@@ -38,21 +39,22 @@ export default function Button({
   };
 
   const sizeStyles = {
-    sm: { padding: '8px 12px', fontSize: 13 },
+    sm: { padding: '10px 14px', fontSize: 13 },
     md: { padding: '12px 16px', fontSize: 15 },
-    lg: { padding: '14px 20px', fontSize: 16 },
+    lg: { padding: '14px 18px', fontSize: 16 },
   };
 
   const variantStyles = {
     primary: {
       backgroundColor: 'var(--button-bg)',
       color: 'var(--button-text)',
-      boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+      boxShadow: '0 6px 14px rgba(25,118,210,0.25), 0 2px 6px rgba(0,0,0,0.06)',
     },
     secondary: {
       backgroundColor: 'var(--bg-secondary)',
       color: 'var(--text-primary)',
       border: '1px solid var(--border-color)',
+      boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
     },
     ghost: {
       backgroundColor: 'transparent',

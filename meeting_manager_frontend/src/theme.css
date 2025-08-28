@@ -39,6 +39,10 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+
+  /* Extended spacing for hero cards */
+  --space-7: 28px;
+  --space-8: 32px;
 }
 
 /* Base light theme application */
@@ -63,6 +67,7 @@ html, body, #root {
 .link {
   color: var(--link-color);
   text-decoration: none;
+  font-weight: 600;
 }
 .link:hover {
   text-decoration: underline;

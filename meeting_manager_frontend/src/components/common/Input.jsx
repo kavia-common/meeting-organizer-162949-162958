@@ -27,7 +27,7 @@ const Input = forwardRef(function Input(
   const wrapper = {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
     width: '100%',
     maxWidth: '100%',
     boxSizing: 'border-box',
@@ -35,8 +35,9 @@ const Input = forwardRef(function Input(
 
   const labelStyle = {
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 700,
     color: 'var(--text-secondary)',
+    letterSpacing: 0.2,
   };
 
   const inputStyle = {
@@ -44,13 +45,13 @@ const Input = forwardRef(function Input(
     maxWidth: '100%',
     minWidth: 0,
     padding: '12px 14px',
-    borderRadius: 'var(--radius-md)',
+    borderRadius: 12,
     border: `1px solid ${error ? '#ef4444' : 'var(--border-color)'}`,
     background: 'var(--surface)',
     color: 'var(--text-primary)',
     outline: 'none',
     fontSize: 15,
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
     boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
     boxSizing: 'border-box',
   };
@@ -77,10 +78,12 @@ const Input = forwardRef(function Input(
         onFocus={(e) => {
           e.currentTarget.style.borderColor = 'var(--link-color)';
           e.currentTarget.style.boxShadow = '0 0 0 3px var(--focus-ring)';
+          e.currentTarget.style.background = '#fff';
         }}
         onBlur={(e) => {
           e.currentTarget.style.borderColor = error ? '#ef4444' : 'var(--border-color)';
           e.currentTarget.style.boxShadow = '0 0 0 0 transparent';
+          e.currentTarget.style.background = 'var(--surface)';
         }}
         {...rest}
       />

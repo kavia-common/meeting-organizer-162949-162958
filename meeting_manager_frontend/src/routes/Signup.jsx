@@ -111,7 +111,7 @@ export default function Signup() {
     <section aria-labelledby="signup-title" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       <AuthForm
         title="Create account"
-        subtitle="Start managing your meetings"
+        subtitle="Set up your profile to schedule and organize meetings seamlessly."
         onSubmit={onSubmit}
         actions={
           <>
@@ -132,8 +132,8 @@ export default function Signup() {
         }
         footer={
           <>
-            Already have an account?{' '}
-            <Link className="link" to="/login">Sign in</Link>
+            <span className="text-muted">Already have an account?</span>{' '}
+            <Link className="link" to="/login"><strong>Sign in</strong></Link>
           </>
         }
       >
@@ -149,6 +149,7 @@ export default function Signup() {
           required
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'signup-email-error' : undefined}
+          helperText="We’ll send a confirmation if required."
         />
         <Input
           label="Password"
@@ -162,6 +163,7 @@ export default function Signup() {
           required
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'signup-password-error' : undefined}
+          helperText="Minimum 6 characters."
         />
         <Input
           label="Confirm password"
@@ -175,6 +177,7 @@ export default function Signup() {
           required
           aria-invalid={Boolean(errors.confirm)}
           aria-describedby={errors.confirm ? 'signup-confirm-error' : undefined}
+          helperText="Make sure it matches the password above."
         />
         {/* Hidden live region for improved screen reader announcement of errors */}
         <span id="signup-email-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">

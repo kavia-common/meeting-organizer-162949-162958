@@ -104,7 +104,7 @@ export default function Login() {
     <section aria-labelledby="login-title" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       <AuthForm
         title="Sign in"
-        subtitle="Access your meeting manager"
+        subtitle="Welcome back! Sign in to access your meetings, notes, and schedules."
         onSubmit={onSubmit}
         actions={
           <>
@@ -125,8 +125,8 @@ export default function Login() {
         }
         footer={
           <>
-            Don&apos;t have an account?{' '}
-            <Link className="link" to="/signup">Create one</Link>
+            <span className="text-muted">Don&apos;t have an account?</span>{' '}
+            <Link className="link" to="/signup"><strong>Create one</strong></Link>
           </>
         }
       >
@@ -142,6 +142,7 @@ export default function Login() {
           required
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'login-email-error' : undefined}
+          helperText="Use the email associated with your account."
         />
         <Input
           label="Password"
@@ -155,6 +156,7 @@ export default function Login() {
           required
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'login-password-error' : undefined}
+          helperText="Minimum 6 characters."
         />
         {/* Hidden live region for improved screen reader announcement of errors */}
         <span id="login-email-error" style={{ position: 'absolute', left: -9999 }} aria-live="polite">
