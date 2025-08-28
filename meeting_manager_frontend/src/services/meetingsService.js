@@ -139,9 +139,10 @@ export async function getMeeting(id) {
 export async function createMeeting(payload) {
   try {
     const body = {
-      attendees: [],
-      tags: [],
-      reminders: [],
+      // Defaults align with DB defaults; client-side defaults for robustness
+      attendees: Array.isArray(payload?.attendees) ? payload.attendees : [],
+      tags: Array.isArray(payload?.tags) ? payload.tags : [],
+      reminders: Array.isArray(payload?.reminders) ? payload.reminders : [],
       ...payload,
     };
     const { data, error } = await supabase.from('meetings').insert([body]).select('*').single();
