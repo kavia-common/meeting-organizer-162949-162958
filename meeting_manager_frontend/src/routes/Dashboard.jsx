@@ -287,8 +287,9 @@ export default function Dashboard() {
       marginBottom: 12,
     },
     filters: {
+      // Three columns: Search (fixed-ish), Tags (fixed-ish), Date range (flexes larger)
       display: 'grid',
-      gridTemplateColumns: '1.2fr 1fr auto',
+      gridTemplateColumns: 'minmax(220px, 280px) minmax(180px, 240px) 1fr',
       gap: 12,
       width: '100%',
       alignItems: 'end',
@@ -371,6 +372,8 @@ export default function Dashboard() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') loadUpcoming();
             }}
+            // Make Search intentionally shorter using a max width
+            style={{ maxWidth: 280, minWidth: 220 }}
           />
           <Input
             label="Tags (any)"
@@ -378,17 +381,20 @@ export default function Dashboard() {
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
             helperText="Comma separated"
+            // Tags also shorter
+            style={{ maxWidth: 240, minWidth: 180 }}
           />
           <div
             style={{
               display: 'grid',
+              // Give date fields ample and equal space
               gridTemplateColumns: '1fr 1fr',
-              gap: 10,
+              gap: 12,
               alignItems: 'end',
               width: '100%',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
               <label
                 htmlFor="date-from"
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}
@@ -407,7 +413,7 @@ export default function Dashboard() {
               />
               <div className="text-muted" style={{ fontSize: 12, minHeight: 0 }} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
               <label
                 htmlFor="date-to"
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}
