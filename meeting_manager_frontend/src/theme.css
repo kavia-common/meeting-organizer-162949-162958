@@ -23,6 +23,11 @@
   --button-text: #ffffff;
   --focus-ring: rgba(25, 118, 210, 0.4);
 
+  /* Component state tokens */
+  --hover-overlay: rgba(0,0,0,0.04);
+  --active-overlay: rgba(0,0,0,0.08);
+  --ring-offset: #ffffff;
+
   /* Spacing and radius tokens for consistency */
   --radius-sm: 6px;
   --radius-md: 8px;
